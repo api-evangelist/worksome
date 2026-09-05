@@ -1,0 +1,82 @@
+generated: '2026-09-04'
+method: searched
+source: https://docs.worksome.com/integrations/mcp-server/ + https://docs.worksome.com/integrations/ai-agents/ + https://www.worksome.com/pricing
+status: candidate
+note: >-
+  Worksome publishes an MCP Server page and names "MCP" as an included platform capability on its
+  pricing page, but ships no reachable MCP server today. The docs state plainly that it "is in
+  early access and not yet generally available", that the endpoint is disclosed only after
+  onboarding, and that the tool reference is deliberately not published because "which operations
+  to expose to an agent is a deliberate decision rather than a straight mirror of the API". No
+  endpoint URL, no npm or PyPI package, and no install command appear anywhere on the developer
+  surface. No endpoint was guessed or probed into existence: a candidate MCP path that happens to
+  answer 200 would read as a verified agent surface, which is exactly the error this record must
+  not make. Wired into apis.yml as X-MCPServerCandidate, NOT as MCPServer — the provider does not
+  yet serve one.
+
+deployment:
+  mode: none
+  endpoint: null
+  install: null
+  package: null
+  auth: unknown
+  auth_note: >-
+    The llms.txt integration table lists the MCP Server's auth as "OAuth 2.0 or PAT", matching the
+    GraphQL API. Recorded as unknown here because it has not been observed on a live endpoint.
+  verified: searched
+  verified_note: >-
+    Established by reading the provider's own MCP Server and AI Agents pages, not by probing an
+    endpoint — there is no endpoint published to probe.
+
+availability:
+  general_availability: false
+  stage: early access
+  access_request: Request access via the form on the MCP Server page, or through a Worksome account representative.
+  endpoint_disclosed_on_onboarding: true
+  tool_reference_published: false
+  tool_reference_reason: >-
+    Quoted from the docs: the exposed operation set is a curated decision rather than a mirror of
+    the API, and Worksome is shaping it around requested use cases before publishing it.
+
+tools: []
+tools_note: >-
+  No tool list is recorded. A candidate list was NOT derived from the GraphQL schema: with 87
+  queries and 113 mutations, any derived list would be an invention of a surface Worksome has
+  explicitly said it is curating differently. The tool set will be knowable only from an
+  authenticated tools/list against the endpoint once access is granted.
+
+probes:
+- {url: 'https://api.worksome.com/.well-known/oauth-protected-resource', status: 404}
+- {url: 'https://api.worksome.com/.well-known/oauth-authorization-server', status: 404}
+- {url: 'https://api.worksome.com/.well-known/ai-plugin.json', status: 404}
+- {url: 'https://docs.worksome.com/.well-known/ai-plugin.json', status: 404}
+probes_note: >-
+  No MCP discovery document is served on any Worksome host. See well-known/worksome-well-known.yml
+  for the full probe matrix.
+
+agent_surfaces_available_today:
+- surface: llms.txt
+  url: https://docs.worksome.com/llms.txt
+  status: live
+  kind: machine-readable documentation
+  file: llms/worksome-llms.txt
+- surface: llms-full.txt
+  url: https://docs.worksome.com/llms-full.txt
+  status: live
+  kind: full documentation corpus, ~6000 lines
+  note: Not committed to this repo; *-llms-full.txt is gitignored because verbatim docs dumps carry secret-shaped example tokens.
+- surface: CLI with --output json and --dry-run
+  status: live but access-gated (private repository)
+  kind: shell-invocable API surface, 170+ operations
+  file: cli/worksome-cli.yml
+  note: The AI Agents page names this as the recommended path for an agent that can run shell commands.
+- surface: GraphQL API
+  status: live
+  kind: direct programmatic access with open schema introspection
+  file: graphql/worksome.graphql
+
+assessment: >-
+  Worksome has done the documentation half of agent readiness properly — a published llms.txt, a
+  full docs corpus, an explicitly agent-targeted CLI with a rehearsal flag, and an openly
+  introspectable schema. What it does not yet have is a callable agent endpoint. An agent can
+  learn this API today and, with a granted CLI, act on it; it cannot connect to it over MCP.

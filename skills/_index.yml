@@ -1,0 +1,89 @@
+generated: '2026-09-04'
+method: generated
+source: graphql/worksome-introspection.json + https://docs.worksome.com/ (GraphQL, webhooks, timesheet integration and guides pages)
+note: >-
+  Packaged Agent Skills for the Worksome GraphQL API, one per marquee flow. Every operation name,
+  input field, type and enum value referenced in these skills was read from the live introspected
+  schema at https://api.worksome.com/graphql or quoted from Worksome's published docs — none was
+  invented. Worksome publishes no OpenAPI, so these are grounded in the GraphQL SDL, which is the
+  real contract here. Worksome publishes no skills or AGENTS.md of its own; a search of the docs
+  host and github.com/worksome found none, so these are generated rather than searched.
+grounded_in: graphql/worksome.graphql
+provider_published_skills: false
+
+skills:
+- name: worksome-create-and-track-a-hire
+  file: worksome-create-and-track-a-hire.md
+  category: hiring
+  description: >-
+    Create a draft hire for an existing trusted contact, then follow it through contract
+    acceptance to an active engagement. Covers account resolution through the Account interface,
+    the full HireInput shape, the deprecated hire mutation, the DRAFT/OFFERED/READY/ACTIVE ladder,
+    and the limits of cancelHire and terminateHire as reversals.
+  operations: [accounts, trustedContacts, createDraftHire, hire, hires, cancelHire, terminateHire]
+  writes: true
+  reversible: partial
+  cautions:
+  - No idempotency key — query by externalIdentifier before retrying a timed-out createDraftHire.
+  - Passing an empty customFieldValues array skips custom-field syncing and fails validation where required fields exist.
+  - hireAccepted is never delivered; subscribe to contractAccepted.
+
+- name: worksome-push-external-timesheets
+  file: worksome-push-external-timesheets.md
+  category: timesheets-and-payments
+  description: >-
+    Push timesheet registrations from an external time-tracking system via createCustomTimesheet,
+    validating against Worksome's published JSON Schema and handling per-row partial-success
+    rejections. Documents the externalId upsert key — the only replay-safe write in the API.
+  operations: [hires, createCustomTimesheet, timesheets, paymentRequests]
+  writes: true
+  reversible: false
+  cautions:
+  - Payment requests created this way are auto-approved by default; money moves without manual review.
+  - approvePaymentRequest has no reversal operation in the schema.
+  - deleteTimesheetRegistration is worker-only; correct by resubmitting the same externalId.
+
+- name: worksome-consume-webhooks
+  file: worksome-consume-webhooks.md
+  category: events
+  description: >-
+    Register a webhook, verify the HMAC-SHA256 Signature header against the raw body, route all 17
+    event types, and recover missed deliveries through webhookEvents, webhookEventLogs and
+    retryWebhookEvent. Covers the lifecycle-event overlap and the lowercase/uppercase hireStatus trap.
+  operations: [createWebhook, updateWebhook, deleteWebhook, webhooks, webhook, webhookEvents, webhookEventLogs, retryWebhookEvent]
+  writes: true
+  reversible: true
+  cautions:
+  - The signature carries no timestamp, so there is no bounded replay window; handlers must be idempotent.
+  - Return 200 for unrecognised event types so new events do not break the integration.
+  - Respond within 60 seconds; acknowledge first and process asynchronously.
+
+- name: worksome-audit-hires-and-compliance
+  file: worksome-audit-hires-and-compliance.md
+  category: reporting
+  description: >-
+    Read-only sweep of a company's external workforce — hires, contracts, classifications,
+    compliance gates, payment requests and invoices — with Lighthouse offset pagination, query
+    complexity discipline, and client-side rate-limit tracking. The safe way for an agent to get
+    oriented.
+  operations: [accounts, hires, hire, contracts, classifications, compliance, paymentRequests, invoices, projects]
+  writes: false
+  reversible: na
+  cautions:
+  - Query complexity is enforced but the budget is unpublished; keep queries shallow and use first 25.
+  - No rate-limit headers reach the client; count calls in a rolling 60-second window.
+  - Read fees, not the deprecated recruiterFee, and classifications, not the deprecated Hire.classification* fields.
+
+conventions_referenced:
+  errors: errors/worksome-error-codes.yml
+  conventions: conventions/worksome-conventions.yml
+  authentication: authentication/worksome-authentication.yml
+  rate_limits: rate-limits/worksome-rate-limits.yml
+  webhooks: asyncapi/worksome-webhooks.yml
+  data_model: data-model/worksome-data-model.yml
+  lifecycle: lifecycle/worksome-lifecycle.yml
+
+summary:
+  skill_count: 4
+  read_only: 1
+  writing: 3

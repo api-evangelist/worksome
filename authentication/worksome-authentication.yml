@@ -1,0 +1,144 @@
+generated: '2026-09-04'
+method: searched
+source: https://docs.worksome.com/authentication/
+docs: https://docs.worksome.com/authentication/
+note: >-
+  Derived from the published Authentication page rather than from an OpenAPI securitySchemes
+  block — Worksome publishes no OpenAPI. The API is GraphQL-only and every authenticated
+  call carries a standard Authorization: Bearer header against the single endpoint
+  https://api.worksome.com/graphql. Two token sources exist: OAuth 2.0 authorization code
+  (the preferred path, for acting on behalf of other users) and Personal Access Tokens (for
+  testing and single-account integrations). Note that schema INTROSPECTION is open and
+  unauthenticated — an anonymous POST of the introspection query to the endpoint returns the
+  full 496-type schema — while every data-bearing query and mutation requires a token.
+
+transport:
+  tls_required: true
+  endpoint: https://api.worksome.com/graphql
+  method: POST
+  content_type_required: application/json
+  csrf_note: >-
+    The Apollo federation gateway enforces CSRF preflight. A POST without Content-Type:
+    application/json, or any GET without an apollo-require-preflight (or
+    x-apollo-operation-name) header, is rejected with extensions.code BAD_REQUEST before the
+    request reaches GraphQL.
+
+schemes:
+- id: oauth2_authorization_code
+  type: oauth2
+  flow: authorizationCode
+  preferred: true
+  authorization_url: https://use.worksome.com/oauth/authorize
+  token_url: https://use.worksome.com/oauth/token
+  refresh_supported: true
+  refresh_grant_type: refresh_token
+  pkce: not documented
+  client_registration: >-
+    Self-service via the Worksome API clients page. A client carries a name and a redirect
+    (callback) URL; only the registered redirect URL is accepted at authorization time.
+  authorize_parameters:
+  - name: client_id
+    required: true
+    type: string
+  - name: response_type
+    required: true
+    type: string
+    value: code
+  - name: redirect_uri
+    required: true
+    type: string
+  - name: state
+    required: false
+    type: string
+    description: Unguessable random string; CSRF protection. Docs instruct aborting if the returned state does not match.
+  - name: prompt
+    required: false
+    type: string
+    enum: [consent, login]
+    description: consent always shows the approval screen; login always forces re-authentication; omitted means prompt only if not previously authorized.
+  token_parameters: [client_id, client_secret, code, grant_type, redirect_uri]
+  token_response_fields: [token_type, expires_in, access_token, refresh_token]
+  code_lifetime: 10 minutes
+  access_token_lifetime: 15 days
+  refresh_window: 90 days
+  scopes_published: false
+  scopes_note: >-
+    No scope parameter is documented on the authorize call and no scope reference page is
+    published, so no scopes/ artifact is emitted. The docs do acknowledge scopes exist at the
+    failure end — a listed cause of authorization failure is "The token does not have the
+    required scopes" — which means an integrator can be denied by a scope they were never
+    shown. This is a real documentation gap, not an absence of the mechanism.
+  revocation: >-
+    A client can be revoked from the API clients page, which both blocks new token issuance
+    and invalidates tokens already issued by that client.
+
+- id: personal_access_token
+  type: http
+  scheme: bearer
+  bearer_format: opaque
+  preferred: false
+  intended_use: Testing and single-account integrations; also the CLI's only supported credential.
+  issuance: Self-service from the Worksome API tokens page.
+  lifetime: 6 months from creation, automatically revoked on expiry
+  revocation: Manual, from the API tokens page.
+  header: 'Authorization: Bearer {token}'
+
+authorization_model:
+  tenancy: >-
+    A token belongs to a user, and a user may have access to multiple accounts. The viewer
+    query returns the authenticated user; the top-level accounts query returns the accounts
+    the token can act on. accounts returns an Account interface implemented by Company,
+    Organisation, Partner, StaffingAgency and Worker — most company-context operations
+    require a Company id. Cross-company access is denied, and the docs list "wrong company
+    scope" as a distinct authorization failure cause.
+  field_level: >-
+    Authorization is enforced per field, not only per operation. A field the token may not
+    read returns null inside data with a matching entry in the errors array, so a partial
+    success is the normal shape of an under-privileged query.
+  roles: >-
+    Role names are not published. The docs reference "the required role (e.g., manager,
+    admin)" as an example only.
+
+multi_factor:
+  available: true
+  note: >-
+    The GraphQL schema exposes end-user MFA management — createSmsMultiFactor,
+    verifySmsMultiFactor, createTotpMultiFactor, verifyTotpMultiFactor, removeMultiFactor,
+    and multiFactor/multiFactors queries. This is MFA for platform users managed through the
+    API, not a second factor on API token authentication itself.
+  methods: [sms, totp]
+  source: graphql/worksome.graphql
+
+sso:
+  available: true
+  protocol: SAML
+  note: SSO/SAML is named as an included platform capability on the pricing page. No SAML metadata endpoint or configuration reference is published in the developer docs.
+  source: https://www.worksome.com/pricing
+
+webhook_authentication:
+  direction: inbound-to-consumer
+  mechanism: HMAC-SHA256
+  header: Signature
+  secret: Shared secret agreed with Worksome out of band
+  verification: hash_hmac('sha256', raw_body, secret) compared in constant time against the Signature header
+  note: >-
+    The signature covers the RAW request body — the docs are explicit that the body must be
+    read and verified before it is parsed. The header carries a bare hex digest with no
+    timestamp and no version prefix, so there is no replay window bound to the signature
+    itself; the docs instead put the burden on the consumer, requiring handlers to be
+    idempotent and to detect duplicates by entity id.
+  source: https://docs.worksome.com/webhooks/guides/handle-webhooks/
+
+failure_modes:
+- condition: Missing or invalid bearer token
+  code: DOWNSTREAM_SERVICE_ERROR
+  http: 200
+  discriminator: 'extensions.guards == ["api"] AND message == "Unauthenticated."'
+- condition: Valid token, operation not permitted
+  code: DOWNSTREAM_SERVICE_ERROR
+  http: 200
+  discriminator: No validation map, no guards; message "You are not authorized to perform this action." with the operation in path.
+- condition: Expired or revoked token
+  code: DOWNSTREAM_SERVICE_ERROR
+  http: 200
+  remediation: Issue a new PAT (6-month lifetime) or refresh the OAuth token.

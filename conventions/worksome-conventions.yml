@@ -1,0 +1,279 @@
+generated: '2026-09-04'
+method: searched
+source: https://docs.worksome.com/graphql/guides/pagination/ + https://docs.worksome.com/graphql/guides/error-handling/ + https://docs.worksome.com/graphql/guides/rate-limiting/ + https://docs.worksome.com/authentication/ + https://docs.worksome.com/integrations/timesheet-integration/ + https://docs.worksome.com/webhooks/guides/handle-webhooks/ + graphql/worksome.graphql
+note: >-
+  Cross-cutting runtime semantics for the Worksome GraphQL API, read from the published guides
+  and cross-checked against the introspected schema. Worksome is unusually candid about the
+  gaps: the rate-limiting guide states outright that the gateway drops X-RateLimit-* headers,
+  and the error reference states that there is no machine-readable authorization tag. Those
+  admissions are recorded here as documented absences, which is a different and better fact
+  than an undocumented one.
+
+api_style: graphql
+transport: HTTPS POST to a single endpoint
+endpoint: https://api.worksome.com/graphql
+content_type: application/json
+
+authentication:
+  style: Bearer token (OAuth 2.0 authorization code, or Personal Access Token)
+  header: 'Authorization: Bearer {token}'
+  detail: authentication/worksome-authentication.yml
+
+identifiers:
+  style: Relay-style opaque global IDs
+  encoding: base64 of "{Type}:{numeric id}"
+  examples:
+  - SGlyZTox              # Hire:1
+  - Q29udHJhY3Q6MTIzNA==  # Contract:1234
+  - Q29tcGFueTox          # Company:1
+  - VXNlcjoxMjM0          # User:1234
+  opaque_contract: >-
+    The docs treat these as opaque handles obtained from the API, not as values to construct.
+    The same ids appear in webhook payloads and resolve directly against the GraphQL API,
+    which is what makes the deliberately minimal webhook payloads workable.
+  stability_note: >-
+    hireId is the stable reference for an engagement. Revising contract terms creates a NEW
+    contract with a new id while hireId stays constant, so integrations should key on hireId,
+    not contract id.
+
+pagination:
+  style: offset-based (Laravel Lighthouse paginator)
+  cursor_supported: false
+  request_params:
+  - name: first
+    type: Int
+    description: Page size. Docs recommend 25 over 100 to stay inside the query-complexity budget.
+  - name: page
+    type: Int
+    description: 1-based page number.
+  response_shape:
+    items_field: data
+    metadata_field: paginatorInfo
+  metadata_fields:
+  - {name: currentPage, type: 'Int!', description: Current page number, 1-based}
+  - {name: lastPage, type: 'Int!', description: Last available page number}
+  - {name: total, type: 'Int!', description: Total records matching the query}
+  - {name: count, type: 'Int!', description: Records returned on this page}
+  - {name: hasMorePages, type: 'Boolean!', description: Whether more pages follow}
+  - {name: perPage, type: 'Int!', description: Items requested per page}
+  - {name: firstItem, type: Int, description: Index of the first item on this page}
+  - {name: lastItem, type: Int, description: Index of the last item on this page}
+  termination: Iterate until paginatorInfo.hasMorePages is false.
+  cli_equivalent: 'worksome <resource> list --first N --page N, or --all to walk every page'
+
+filtering:
+  style: Per-query typed arguments plus enum status filters; no universal filter grammar.
+  examples: 'hires(first: 25, activeStatus: ACTIVE), invoices filtered by status/currency/date'
+  cli_equivalent: '--filter "status=ACTIVE,currency=DKK" and --search'
+
+field_selection:
+  style: native GraphQL selection sets
+  sparse_fieldsets: inherent
+  expansion: inherent (nested selection), bounded by query complexity rather than by an expand parameter
+  guidance: Request only needed fields and limit nesting depth; complexity is evaluated before execution and an over-budget query is rejected outright.
+
+versioning:
+  style: unversioned, evolve-in-place
+  detail: lifecycle/worksome-lifecycle.yml
+
+error_envelope:
+  style: graphql-errors
+  discriminator: extensions.code
+  http_status_reality: Almost every failure arrives over HTTP 200; only gateway BAD_REQUEST is a 400.
+  detail: errors/worksome-error-codes.yml
+
+rate_limit_signaling:
+  documented_limit: 60 requests per minute per token
+  runtime_headers: none
+  runtime_headers_note: >-
+    Documented absence. The federation gateway does not propagate X-RateLimit-* headers and
+    does not forward the platform's Retry-After. Throttling must be detected by string-matching
+    "Too Many Requests" inside a DOWNSTREAM_SERVICE_ERROR, and tracked client-side.
+  detail: rate-limits/worksome-rate-limits.yml
+
+request_id_tracing:
+  request_id_header: none documented
+  correlation_field: extensions.serviceName (identifies the failing service, e.g. "platform")
+  note: >-
+    No request id, trace id, or correlation header is documented on requests or responses. The
+    support page asks integrators to send "the full error response and your query" when
+    escalating, which is the practical substitute for a request id.
+
+metadata:
+  arbitrary_metadata_supported: partial
+  surfaces:
+  - surface: Custom fields
+    mechanism: customFields / customFieldValues on hires and workers, defined per company
+    mutations: [createCustomField, updateCustomField, deleteCustomField, updateWorkerCustomFieldValues]
+    gotcha: >-
+      Passing an empty array to HireInput.customFieldValues SKIPS custom field syncing
+      entirely. If required custom fields are configured, omitting values fails validation.
+  - surface: Timesheet registrations
+    mechanism: a free-form meta object (additionalProperties true) plus a free-text reference field
+    source: json-schema/worksome-timesheet-registration.json
+  - surface: External identifiers
+    mechanism: TrustedContact.externalIdentifier carries the consumer's own id for a talent-pool contact and is echoed in webhook payloads
+
+idempotency:
+  coverage: partial
+  scope:
+  - createCustomTimesheet
+  mechanism: >-
+    Natural-key upsert on a caller-supplied identifier, not a generic replay-protection header.
+    Each timesheet registration carries a required externalId, documented as "used as the key
+    for updates — sending the same externalId replaces the existing registration for that
+    date". Resubmitting the same payload therefore converges rather than duplicating.
+  header: null
+  header_note: >-
+    There is NO Idempotency-Key header, and no equivalent request-level replay protection, on
+    any other operation. Of 113 mutations in the schema, exactly one documents a replay-safe
+    key. Retrying a failed createDraftHire, createJob, createPaymentRequest, approvePaymentRequest
+    or acceptBid after a timeout is not safe — nothing in the contract prevents a duplicate.
+  retention: null
+  scope_note: >-
+    Recorded as partial rather than full deliberately. The mutating surface is broad (113
+    mutations spanning hiring, payments, invoicing and contracts) and the mechanism reaches one
+    of them. The financially consequential writes — payment request creation and approval — have
+    no replay protection at all.
+  consumer_side: >-
+    Worksome pushes idempotency onto webhook CONSUMERS rather than offering it on the API:
+    "Your handler should be idempotent — processing the same webhook twice should produce the
+    same result. Use the entity IDs in the payload to detect duplicates." This is necessary
+    because contractAccepted, hireUpdated and hireEnded can fire for the same state change, and
+    failed deliveries are retried up to five times.
+
+dry_run_mode:
+  available: partial
+  surface: CLI only
+  flag: --dry-run
+  behaviour: Previews the GraphQL operation and the variables that would be sent, without executing.
+  api_equivalent: none
+  note: >-
+    An agent driving the CLI can rehearse a write; an agent calling GraphQL directly cannot.
+    There is no dry-run argument, validate-only mode, or preview mutation in the schema. The
+    closest API-side equivalent is createDraftHire, which creates a hire in a draft state that
+    must be completed in the Worksome UI before it becomes active — a human-gated staging step
+    rather than a rehearsal.
+  source: https://docs.worksome.com/integrations/cli/
+
+reversibility:
+  grade: documented
+  grade_reason: >-
+    Reversal operations exist and are named in the schema for the major write surfaces, and one
+    of them (project end/open) is exactly symmetric. But NO reversal window is stated anywhere —
+    not in the docs, not in the schema descriptions. cancelHire is bounded by a state, not a
+    duration ("a hire is cancelled before it became active"), and terminateHire has no stated
+    bound at all. Grade is documented (0.4), not verified, because a verified grade requires a
+    stated window and asserting one Worksome has not published would be inventing it.
+  write_surface_size: 113 mutations
+  reversals:
+  - operation: createDraftHire
+    reversal: cancelHire
+    reversal_type: cancel
+    window_stated: false
+    window_condition: >-
+      Not time-bounded. The webhook reference states hireCancelled fires when "a hire is
+      cancelled before it became active", so the boundary is the hire reaching active status
+      (the contract start date passing after worker acceptance), not an elapsed period. The
+      exact behaviour of cancelHire on an already-active hire is not documented.
+    fallback: terminateHire
+    docs: https://docs.worksome.com/webhooks/reference/
+  - operation: hire lifecycle (active engagement)
+    reversal: terminateHire
+    reversal_type: early termination, not undo
+    window_stated: false
+    note: >-
+      terminateHire ends an active hire early with a termination reason (worker_unavailability,
+      project_completed_early, mutual_agreement_to_terminate, budget_constraints and eleven
+      others). It is a forward state change with financial consequences, not a rollback — work
+      already performed still flows through payment requests and invoicing. There is no
+      un-terminate.
+  - operation: acceptBid
+    reversal: rejectHire
+    reversal_type: reject
+    window_stated: false
+  - operation: createJob
+    reversal: endJob
+    reversal_type: end
+    window_stated: false
+  - operation: createProject
+    reversal: endProject
+    reversal_type: end
+    window_stated: false
+    symmetric_reopen: openProject
+    note: >-
+      The one clean round trip in the schema. endProject sets an end date; openProject sets the
+      end date back to null, making the project active again. The schema descriptions state both
+      halves explicitly.
+  - operation: createPaymentRequest
+    reversal: deletePaymentRequest
+    reversal_type: delete
+    window_stated: false
+    note: >-
+      Deletion is available but no window or state precondition is documented. The webhook
+      reference shows a payment request moving through issued, approved, rejected, paid, cancelled
+      and worker-paid-out states; which of those still permit deletion is not stated. Treat
+      deletion after payout as unsupported until confirmed with Worksome.
+  - operation: approvePaymentRequest / actionApprovalApprovable
+    reversal: none documented
+    reversal_type: null
+    window_stated: false
+    note: >-
+      No un-approve operation exists in the schema. paymentRequestRejected and
+      paymentRequestCancelled are separate events, not reversals of an approval. This is the
+      sharpest reversibility gap in the API: approval releases money, and it is one-way as far as
+      the public contract goes.
+  - operation: createCustomTimesheet
+    reversal: deleteTimesheetRegistration
+    reversal_type: delete
+    window_stated: false
+    note: >-
+      Only workers can delete timesheet registrations, per the schema description — the
+      integrating company that created them via the API cannot delete them through the same
+      credential. Correction is instead done by resubmitting the same externalId, which
+      replaces the registration in place.
+  - operation: createJobCandidate / forwardCandidate
+    reversal: withdrawJobCandidate, withdrawForwardedCandidate
+    reversal_type: withdraw
+    window_stated: false
+  - operation: createWebhook
+    reversal: deleteWebhook
+    reversal_type: delete
+    window_stated: false
+    replay: retryWebhookEvent re-delivers a specific webhook event
+  - operation: createTrustedContact / approveTrustedContact
+    reversal: deleteTrustedContact, blockTrustedContact
+    reversal_type: delete or block
+    window_stated: false
+  generic_deletes:
+    note: >-
+      Symmetric delete mutations exist for most configuration entities — custom fields, notes,
+      projects, milestones, user groups, workflows, approvals, recruiter and supplier candidates,
+      timesheets, company recruiters. None states a window or a cascade behaviour.
+  no_reversal:
+  - approvePaymentRequest
+  - submitCompliance
+  - onboardEmployment
+  - approveEmploymentChanges
+  - storeBankDetails
+  - createExport
+
+webhooks:
+  signature: HMAC-SHA256 of the raw body in a Signature header
+  retries: 5 attempts, exponential backoff at 10s, 100s, 1000s, 10000s
+  timeout: 60 seconds
+  expected_response: any 2XX; the docs instruct returning 200 even for unknown event types so new events can be added without breaking consumers
+  ordering_guarantee: none stated
+  overlap_warning: >-
+    contractAccepted, hireUpdated and hireEnded can fire around the same moment for one state
+    change. Read contract.hireStatus from the payload rather than inferring state from which
+    event arrived.
+  detail: asyncapi/worksome-webhooks.yml
+
+cross_references:
+  errors: errors/worksome-error-codes.yml
+  lifecycle: lifecycle/worksome-lifecycle.yml
+  authentication: authentication/worksome-authentication.yml
+  rate_limits: rate-limits/worksome-rate-limits.yml
+  data_model: data-model/worksome-data-model.yml
+  webhooks: asyncapi/worksome-webhooks.yml

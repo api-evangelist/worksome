@@ -1,0 +1,133 @@
+generated: '2026-09-04'
+method: searched
+source: https://docs.worksome.com/changelog/ + https://status.worksome.com/ + graphql/worksome-introspection.json
+note: >-
+  Worksome has no written versioning or deprecation POLICY document — there is no page stating
+  a support window, a notice period, or an SLA. What it has instead is a consistently applied
+  deprecation PRACTICE that is visible in two places at once: every deprecated schema element
+  carries an @deprecated reason naming its replacement, and the dated changelog restates the
+  same deprecation in prose with before/after queries. On at least one occasion (Bill to
+  PaymentRequest, 2024-02-12) the removal date was announced six months in advance and
+  honoured. That is stronger evidence than most published policies, but it is practice, not
+  commitment: no document obliges Worksome to give notice on the next one.
+
+versioning:
+  scheme: unversioned
+  in_url: false
+  in_header: false
+  note: >-
+    The endpoint is https://api.worksome.com/graphql and is constant. There is no version path
+    segment, no version header, and no version field in the schema. The API evolves in place
+    using GraphQL's additive model, and the dated changelog is the only record of what changed.
+  breaking_change_handling: >-
+    Breaking changes happen via a deprecate-then-remove cycle rather than a version bump. Two
+    removals appear in the published window (Job.paymentScheme, removed 2024-09-29; the bill /
+    bills surface, removed 2024-08-29), each preceded by a deprecation entry.
+
+deprecation:
+  policy_published: false
+  policy_url: null
+  notice_period_stated: null
+  sunset_header: false
+  deprecation_header: false
+  rfc8594: false
+  mechanism: GraphQL @deprecated directive plus a dated changelog entry
+  machine_readable: true
+  machine_readable_note: >-
+    Every deprecation is readable from the schema itself — introspection returns isDeprecated
+    and deprecationReason for each field and enum value, and 14 of the 15 deprecated fields
+    name their replacement in the reason string. An agent can discover the full deprecation
+    surface without reading the docs.
+  deprecated_field_count: 15
+  deprecated_enum_value_count: 3
+  deprecated_fields:
+  - field: Classification.hasUpdatedHire
+    replacement: isReclassificationRequired
+  - field: CompanyRecruiter.recruiterFee
+    replacement: fees
+    announced: '2026-04-22'
+  - field: Hire.recruiterFee
+    replacement: fees
+    announced: '2026-04-22'
+  - field: Hire.wcr
+    replacement: classification
+  - field: Hire.classificationResult
+    replacement: null
+    reason: Decoupling classification from hire in future versions.
+  - field: Hire.classificationLabel
+    replacement: null
+    reason: Decoupling classification from hire in future versions.
+  - field: Hire.classificationPdfUrl
+    replacement: null
+    reason: Decoupling classification from hire in future versions.
+  - field: Job.address
+    replacement: location
+  - field: Job.paymentScheme
+    replacement: null
+    reason: No direct replacement planned; phased out for platform simplification.
+    announced: '2024-09-02'
+    removed: '2024-09-29'
+  - field: LegacyTimesheet.format
+    replacement: Timesheet
+  - field: LegacyTimesheet.html
+    replacement: Timesheet
+  - field: Mutation.hire
+    replacement: createDraftHire
+    announced: '2026-01-15'
+  - field: PaymentRequest.legacyTimesheet
+    replacement: PaymentRequest.timesheet
+  - field: Query.profile
+    replacement: viewer
+  - field: TrustedContact.tags
+    replacement: skills
+  deprecated_enum_values:
+  - value: ClassificationResult.LIKELY_EMPLOYEE
+    replacement: EMPLOYEE
+  - value: ClassificationResult.LIKELY_INDEPENDENT
+    replacement: INDEPENDENT
+  - value: ComplianceName.COMMON_BUSINESS_ENTITY
+    replacement: COMPANY_COMMON_BUSINESS_ENTITY or FREELANCER_COMMON_BUSINESS_ENTITY
+  removals_observed:
+  - element: Job.paymentScheme
+    announced: '2024-09-02'
+    removed: '2024-09-29'
+    notice_days: 27
+  - element: bill / bills surface
+    announced: '2024-02-12'
+    removed: '2024-08-29'
+    notice_days: 199
+
+status_page:
+  url: https://status.worksome.com/
+  provider: self-hosted
+  verified: '2026-09-04'
+  http_status: 200
+  components:
+  - group: production
+    items: [platform (.com), Gateway, Docs]
+  - group: commercial
+    items: [worksome.com, Worksome Helpcenter]
+  incident_history: true
+  history_window_on_landing: 7 days, with a full history link
+  subscription: not offered on the page
+  machine_readable_feed: none observed (no /api/v2/status.json, no RSS or Atom link)
+  note: >-
+    The status page separates the Gateway from the platform, which matters here — the
+    federation gateway is the component that swallows 429s and drops rate-limit headers, so it
+    is the right thing to be able to watch independently.
+
+sla:
+  published: false
+  uptime_target: null
+  note: >-
+    No uptime commitment, credit scheme, or support-response target is published on the status
+    page, the pricing page, or the API Terms of Use surface. Commercial terms are quote-only.
+
+support:
+  developer_support: https://docs.worksome.com/support/
+  help_center: https://help.worksome.dk/en
+  channel: email to the address published on the docs support page, plus the customer's Worksome account representative
+  note: >-
+    There is no public developer community, forum, or issue tracker. The CLI and MCP server
+    both route support through "your Worksome contact", and the CLI repository is private, so
+    there is no public place to report an API defect.

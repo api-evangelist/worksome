@@ -1,0 +1,75 @@
+generated: '2026-09-04'
+method: searched
+source: https://docs.worksome.com/integrations/php-sdk/ + https://repo.packagist.org/p2/worksome/sdk.json + https://api.github.com/repos/worksome/sdk-php + https://docs.worksome.com/integrations/cli/
+note: >-
+  Worksome ships one official API client package on a public registry (the PHP SDK on
+  Packagist) and one official CLI distributed as a private Go module. There is no
+  first-party JavaScript, Python, Ruby, Go client library, or .NET client on any public
+  registry — an npm search for "worksome" returns only an internal GitHub Action, and
+  pypi.org/pypi/worksome/json returns 404. The github.com/worksome organisation publishes
+  57 public repositories, but with the exception of sdk-php they are internal Laravel/PHP
+  tooling packages (request-factories, envy, feature-flags, graphlint and similar), not
+  clients for the Worksome public API, and are excluded here.
+
+packages:
+- name: worksome/sdk
+  language: PHP
+  registry: packagist
+  official: true
+  url: https://packagist.org/packages/worksome/sdk
+  source: https://github.com/worksome/sdk-php
+  install: composer require "worksome/sdk" "guzzlehttp/guzzle:^7.5" "http-interop/http-factory-guzzle:^1.2"
+  version: v0.1.4
+  published: '2025-04-17'
+  license: MIT
+  description: >-
+    An object-oriented PHP wrapper for the Worksome API. Provides authenticate(), a
+    viewer() helper for the authenticated user id and account list, and a graphql()
+    helper that executes arbitrary queries and mutations either inline or loaded from a
+    .graphql file. Requires PHP 8.4+ per the docs (composer.json on the latest release
+    declares ^8.3) and a PSR-17/PSR-18 HTTP implementation, for which the docs recommend
+    Guzzle.
+  currency_note: >-
+    Latest release v0.1.4 is dated 2025-04-17, five releases total since 2023-05-31. The
+    repository is not archived and was last pushed 2026-08-10, so the project is alive
+    even though the last tagged release predates the 2026-01-15 createDraftHire mutation
+    and the 2026-04-22 recruiterFee deprecation. The SDK is a thin GraphQL passthrough, so
+    schema changes do not necessarily require a release; still, the version pinned by
+    Composer consumers is nearly seventeen months older than the API it wraps.
+
+- name: worksome-cli
+  binary: worksome
+  language: Go
+  registry: null
+  official: true
+  url: https://docs.worksome.com/integrations/cli/
+  source: https://github.com/worksome/worksome-cli
+  install: go install github.com/worksome/worksome-cli/cmd/worksome@latest
+  version: null
+  published: null
+  description: >-
+    The official Worksome CLI — 60+ resource groups and 170+ operations over the GraphQL
+    API, with --output json for machine consumption and --dry-run to preview an operation
+    and its variables without executing. Pre-built binaries for macOS, Linux and Windows
+    are attached to each GitHub release.
+  currency_note: >-
+    version and published are null because the distribution is not queryable. Worksome's
+    own docs state the worksome-cli repository is currently PRIVATE, so neither the release
+    list nor proxy.golang.org can be read anonymously, and downloading the pre-built
+    binaries requires repository access granted by a Worksome contact. There is no public
+    registry entry to date. External integrators cannot determine what version they would
+    be installing, and neither can we — this is a real distribution gap, not an unchecked
+    field.
+
+summary:
+  total: 2
+  official: 2
+  on_public_registry: 1
+  languages:
+  - PHP
+  - Go
+  gaps:
+  - No JavaScript/TypeScript client on npm.
+  - No Python client on PyPI.
+  - No Go, Ruby, Java, or .NET client on any public registry.
+  - The CLI repository and its release binaries are access-gated.

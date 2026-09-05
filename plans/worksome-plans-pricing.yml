@@ -1,0 +1,46 @@
+generated: '2026-09-04'
+method: searched
+source: https://www.worksome.com/pricing
+note: >-
+  Worksome publishes a pricing PAGE but no pricing. The page describes the commercial model
+  in prose — "No per-contractor licenses. No surprise fees", no per-seat fees, unlimited
+  seats, and a single platform foundation on which every plan is built — and lists eight
+  capabilities (compliance/classification, Worksome Intelligence AI, sourcing and talent
+  pool, global payments, vendor management, reporting, API and integrations, dedicated
+  support) that are stated to be included on every plan. It names no tier, no price, no
+  currency, no billing period, and no quota or overage. Every call to action is "Request a
+  quote". This is an enterprise sales gate, not a missing page: an integrator cannot
+  determine the cost of API access, or whether API access carries any cost, without talking
+  to sales. The API rate limit is separately documented as varying "depending on your plan
+  and agreement", which confirms plans exist and differ — they are simply not published.
+
+plan_count: 0
+pricing_model: quote-only
+public_prices: false
+free_tier: false
+self_serve_signup: false
+currency: null
+billing_period: null
+plans: []
+
+capabilities_stated_included:
+- Compliance built-in (IR35, US 1099/W-2, local rules in 150+ countries)
+- Worksome Intelligence (embedded AI assistants, AI job descriptions, spend insights)
+- Sourcing and talent pool
+- Global payments (150+ countries, gross or payroll)
+- Vendor management
+- Reporting and insights
+- API and integrations (public API, MCP, webhooks, SSO/SAML)
+- Dedicated support
+
+api_pricing:
+  published: false
+  metered: unknown
+  note: >-
+    No API-specific pricing, quota, or overage is published anywhere on the pricing page or
+    in the developer docs. The only quantitative API limit published is the 60 requests per
+    minute per token default, which the rate-limiting guide says may vary by plan.
+
+contact:
+  quote_request: https://www.worksome.com/demo
+  pricing_page: https://www.worksome.com/pricing

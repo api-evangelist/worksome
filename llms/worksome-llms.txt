@@ -1,0 +1,101 @@
+# Worksome API Documentation
+
+> Last updated: 2026-08-13
+
+> Worksome is a Freelancer Management System (FMS). This documentation covers the Worksome GraphQL API, webhooks, and integrations.
+
+## API Overview
+
+- Base URL: https://api.worksome.com/graphql
+- Protocol: GraphQL over HTTPS
+- Auth: Bearer token via Personal Access Token (PAT) or OAuth 2.0
+- Request format: POST with JSON body containing `query` and `variables`
+- Response format: JSON with `data` and optional `errors` array
+
+## Entity Model
+
+The core entities and their relationships:
+- Company: An organization that hires workers. A user may have access to multiple companies via accounts.
+- Hire: The engagement of a worker by a company. Central entity connecting most operations.
+- Contract: The terms of a hire (rate, dates, currency). A hire may have multiple contracts over time.
+- Worker: A freelancer or contractor. Workers are accessed through hires, not via a top-level query.
+- Invoice: A billing document for work performed under a contract.
+- Job: A job posting that workers can be hired for.
+- Compliance: Verification and regulatory checks on hires (gates, actions, classification).
+- Trusted Contact: A worker's profile data in relation to a specific client/company.
+
+## Capabilities
+
+### Queries (read operations)
+- viewer: Get authenticated user info and account list
+- hires: List/get hires with filters (status, company, dates)
+- contracts: List/get contracts with filters (status, currency)
+- invoices: List/get invoices with filters (status, currency, dates)
+- jobs: List/get job postings
+- compliance: Check compliance status, gates, and classification for a hire
+- paymentRequests: List payment requests
+
+### Mutations (write operations)
+- createDraftHire: Create a new hire (also creates a draft contract)
+- createJob: Create a job posting
+- approvePaymentRequest: Approve a pending payment
+- terminateHire: End a hire early
+- cancelHire: Cancel a hire
+
+### Webhooks (outbound events)
+- contractAccepted: A worker accepted a contract
+- hireUpdated: A hire or its related objects changed
+- hireCancelled: A hire was cancelled
+- hireEnded: A hire reached its planned end date
+- hireTerminated: A hire was terminated early
+- trustedContactUpdated: A trusted contact's data changed
+
+## Integration Methods
+
+- [GraphQL API](https://docs.worksome.com/graphql): Full programmatic access (Developer, OAuth/PAT)
+- [Webhooks](https://docs.worksome.com/webhooks): Real-time event notifications (Developer, HMAC)
+- [CLI](https://docs.worksome.com/integrations/cli): Command-line with broad API coverage, 170+ operations (Developer/AI, PAT)
+- [PHP SDK](https://docs.worksome.com/integrations/php-sdk): PHP wrapper with helpers (PHP Developer, PAT)
+- [Zapier](https://docs.worksome.com/integrations/zapier): No-code automation; triggers and actions are listed on the Zapier app page (Non-technical, OAuth)
+- [MCP Server](https://docs.worksome.com/integrations/mcp-server): AI assistant integration, early access — request access (AI Agent, OAuth 2.0 or PAT)
+- [AI Agents](https://docs.worksome.com/integrations/ai-agents): AI-ready documentation (llms.txt, llms-full.txt) and agent integration guide
+- [Integration Options](https://docs.worksome.com/integrations): Decision guide for choosing the right method
+
+## Documentation
+
+- [Authentication](https://docs.worksome.com/authentication): OAuth 2.0 and PAT authentication guide
+- [GraphQL Getting Started](https://docs.worksome.com/graphql): Introduction to the GraphQL API
+- [Pagination & Filtering Guide](https://docs.worksome.com/graphql/guides/pagination): How to paginate results and apply filters
+- [Error Handling Guide](https://docs.worksome.com/graphql/guides/error-handling): Error envelope (`extensions.code`, `extensions.validation`), partial responses, and retry strategies
+- [Rate Limiting Guide](https://docs.worksome.com/graphql/guides/rate-limiting): Rate limit tiers, query complexity, and backoff strategies
+- [Queries Reference](https://docs.worksome.com/graphql/reference/queries): All available GraphQL queries
+- [Mutations Reference](https://docs.worksome.com/graphql/reference/mutations): All available GraphQL mutations
+- [Objects Reference](https://docs.worksome.com/graphql/reference/objects): GraphQL object types
+- [Enums Reference](https://docs.worksome.com/graphql/reference/enums): GraphQL enum types
+- [Input Objects Reference](https://docs.worksome.com/graphql/reference/input-objects): GraphQL input types
+- [Webhooks](https://docs.worksome.com/webhooks): Webhook events and payloads
+- [Error Reference](https://docs.worksome.com/errors): Error codes and resolution steps
+- [Integration Options](https://docs.worksome.com/integrations): Decision guide for choosing the right integration method
+- [PHP SDK](https://docs.worksome.com/integrations/php-sdk): Official PHP SDK
+- [CLI](https://docs.worksome.com/integrations/cli): Command-line interface with broad API coverage (170+ operations)
+- [Zapier](https://docs.worksome.com/integrations/zapier): No-code automation via Zapier triggers and actions
+- [MCP Server](https://docs.worksome.com/integrations/mcp-server): Model Context Protocol server for AI agents
+- [AI Agents](https://docs.worksome.com/integrations/ai-agents): AI-ready docs, llms.txt, and agent integration patterns
+- [Changelog](https://docs.worksome.com/changelog): API changes and deprecations
+
+## Machine-Readable Resources
+
+- [llms.txt](https://docs.worksome.com/llms.txt): This file — API overview for AI context windows
+- [llms-full.txt](https://docs.worksome.com/llms-full.txt): Complete documentation content (6,000+ lines) for full AI ingestion
+- [GraphQL Schema (JSON)](https://docs.worksome.com/schema.json): Full introspection schema
+- [GraphQL Endpoint](https://api.worksome.com/graphql): Live API endpoint (requires auth)
+
+## Key Concepts
+
+- **Hires**: The central entity. A hire represents the engagement of a worker by a company. Most operations revolve around hires.
+- **Workers**: Freelancers and contractors. A worker belongs to a company through a hire, which has one or more contracts.
+- **Companies**: Organizations that hire workers. A user accesses companies via accounts.
+- **Contracts**: The terms of a hire (rate, dates, currency). A hire may have multiple contracts over time (e.g., renewals, rate changes).
+- **Invoices**: Billing documents for work performed under a contract.
+- **Compliance**: Verification and regulatory checks on hires (classification, gates, actions).
+- **Trusted Contacts**: A worker's profile data scoped to a specific company relationship.

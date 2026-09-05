@@ -1,0 +1,275 @@
+generated: '2026-09-04'
+method: derived
+source: graphql/worksome-introspection.json + https://docs.worksome.com/authentication/ + https://docs.worksome.com/graphql/guides/pagination/ + https://docs.worksome.com/webhooks/guides/handle-webhooks/ + json-schema/worksome-timesheet-registration.json
+note: >-
+  Conformance assertions for the Worksome GraphQL API, each with evidence pointing at the exact
+  contract or docs location. Worksome makes no conformance CLAIMS on its marketing surface — no
+  standards badges, no certification page reachable anonymously — so everything here is read from
+  the contract itself or from the developer docs. Absences are recorded as conforms: false with
+  the reason, not omitted, because the absent ones (RFC 9457, RFC 8414, RFC 8594, OpenID Connect
+  discovery, RateLimit header fields) are the ones an integrator would look for and not find.
+
+conformance:
+- id: graphql
+  name: GraphQL (June 2018 / October 2021 spec)
+  conforms: true
+  evidence: https://api.worksome.com/graphql
+  detail: >-
+    Single POST endpoint serving a spec-compliant GraphQL schema — 496 types, 87 queries, 113
+    mutations, 8 unions, 6 interfaces, 124 enums. Full introspection responds anonymously and
+    returns a well-formed __schema document, which is itself the conformance proof.
+
+- id: graphql-introspection
+  name: GraphQL introspection, publicly enabled
+  conforms: true
+  evidence: 'POST https://api.worksome.com/graphql with {"query":"{__schema{queryType{name}}}"} returns 200'
+  detail: >-
+    Introspection is not disabled in production and requires no credential. The complete schema —
+    including every mutation, every deprecation reason, and every field description — is readable
+    by anyone. This is a deliberate discoverability posture and the reason this repo holds a real
+    contract rather than a prose reconstruction.
+
+- id: graphiql
+  name: GraphiQL interactive explorer
+  conforms: true
+  evidence: https://docs.worksome.com/graphql/
+  detail: The endpoint doubles as the official GraphiQL interface, documented as the place to test queries and explore via introspection.
+
+- id: relay-global-object-identification
+  name: Relay Global Object Identification
+  conforms: partial
+  evidence: 'graphql/worksome.graphql; documented examples SGlyZTox (Hire:1), Q29udHJhY3Q6MTIzNA== (Contract:1234)'
+  detail: >-
+    Object ids follow the Relay convention of base64("{Type}:{id}") and the docs call them Global
+    IDs. Marked partial because the accompanying Relay contract — a top-level node(id:) field and
+    a Node interface — is not present in the schema, and pagination is offset-based rather than
+    Relay connections.
+
+- id: oauth2-authorization-code
+  name: OAuth 2.0 Authorization Code Grant (RFC 6749)
+  conforms: true
+  evidence: https://docs.worksome.com/authentication/
+  detail: >-
+    Standard authorize/token endpoints at https://use.worksome.com/oauth/authorize and /oauth/token
+    with client_id, response_type=code, redirect_uri, state and prompt; token exchange with
+    client_secret and grant_type=authorization_code; refresh via grant_type=refresh_token.
+    Registered redirect URIs enforced. Both endpoints are live (400/500 on empty requests).
+
+- id: oauth2-bearer-token-usage
+  name: OAuth 2.0 Bearer Token Usage (RFC 6750)
+  conforms: true
+  evidence: https://docs.worksome.com/authentication/
+  detail: 'All authenticated calls use the Authorization: Bearer {token} header, for both OAuth tokens and Personal Access Tokens.'
+
+- id: oauth2-pkce
+  name: PKCE (RFC 7636)
+  conforms: false
+  evidence: https://docs.worksome.com/authentication/
+  detail: >-
+    No code_challenge / code_verifier parameters are documented on the authorize or token call.
+    The published flow is confidential-client only (client_secret exchanged in the backend), so
+    there is no documented path for a public/native client.
+
+- id: oauth2-authorization-server-metadata
+  name: OAuth 2.0 Authorization Server Metadata (RFC 8414)
+  conforms: false
+  evidence: 'https://use.worksome.com/.well-known/oauth-authorization-server returns 404; auth.worksome.com 301s to the same 404'
+  detail: >-
+    OAuth is implemented but not discoverable. A client must read the docs to learn the authorize
+    and token URLs; nothing machine-readable publishes them. See well-known/worksome-well-known.yml.
+
+- id: oauth2-protected-resource-metadata
+  name: OAuth 2.0 Protected Resource Metadata (RFC 9728)
+  conforms: false
+  evidence: 'https://api.worksome.com/.well-known/oauth-protected-resource returns 404'
+  detail: Relevant because an MCP client discovers its authorization server through this document. Its absence is a blocker for the announced MCP server's eventual OAuth story.
+
+- id: openid-connect-discovery
+  name: OpenID Connect Discovery 1.0
+  conforms: false
+  evidence: 'https://use.worksome.com/.well-known/openid-configuration returns 404 on every Worksome host'
+  detail: Worksome runs OAuth 2.0 for API authorization, not OIDC. SSO/SAML is offered for platform login (named on the pricing page) but publishes no metadata endpoint.
+
+- id: oauth2-scopes-published
+  name: Published OAuth scope reference
+  conforms: false
+  evidence: https://docs.worksome.com/authentication/
+  detail: >-
+    No scope parameter is documented on the authorize call and no scope reference page exists,
+    yet the error documentation lists "the token does not have the required scopes" as a failure
+    cause. Scopes exist in the implementation and are not published.
+
+- id: rfc9457
+  name: Problem Details for HTTP APIs (RFC 9457 / RFC 7807)
+  conforms: false
+  evidence: https://docs.worksome.com/errors/
+  detail: >-
+    Not applicable in shape — this is GraphQL, so errors ride in the response body's errors array
+    rather than in an application/problem+json document. Recorded as false rather than n/a because
+    the practical consequence is real: there is no HTTP-level problem document, and nearly every
+    error arrives over HTTP 200.
+
+- id: graphql-error-extensions-code
+  name: GraphQL errors with a machine-readable extensions.code
+  conforms: true
+  evidence: https://docs.worksome.com/errors/
+  detail: >-
+    Every error carries extensions.code, and the docs instruct driving control flow from the code
+    rather than the message. Four gateway codes plus a documented sub-discrimination scheme for
+    the overloaded DOWNSTREAM_SERVICE_ERROR. See errors/worksome-error-codes.yml.
+
+- id: ratelimit-header-fields
+  name: RateLimit header fields for HTTP (draft-ietf-httpapi-ratelimit-headers)
+  conforms: false
+  evidence: https://docs.worksome.com/graphql/guides/rate-limiting/
+  detail: >-
+    Explicitly not conformant, and Worksome says so: "The federation gateway in front of the
+    platform does not currently propagate X-RateLimit-* response headers." Retry-After from the
+    platform's 429 is also dropped before the client sees it.
+
+- id: idempotency-key-header
+  name: Idempotency-Key header (draft-ietf-httpapi-idempotency-key-header)
+  conforms: false
+  evidence: graphql/worksome.graphql
+  detail: >-
+    No idempotency header on any operation. One of 113 mutations (createCustomTimesheet) provides
+    natural-key upsert on a caller-supplied externalId. See conventions/worksome-conventions.yml.
+
+- id: rfc8594
+  name: The Sunset HTTP Header Field (RFC 8594)
+  conforms: false
+  evidence: https://docs.worksome.com/changelog/
+  detail: >-
+    No Sunset or Deprecation headers. Deprecation is instead signalled in-band by the GraphQL
+    @deprecated directive (15 fields, 3 enum values, 14 naming a replacement) plus dated changelog
+    entries. Machine-readable, but through the schema rather than through HTTP headers.
+
+- id: json-schema-2020-12
+  name: JSON Schema draft 2020-12
+  conforms: true
+  evidence: https://docs.worksome.com/schemas/timesheet-registration.json
+  detail: >-
+    A first-party JSON Schema declaring "$schema": "https://json-schema.org/draft/2020-12/schema"
+    with a resolvable $id, oneOf, $defs, $ref, format/pattern constraints and
+    additionalProperties: false. Published for the timesheet registration payload so integrators
+    can validate outgoing data and generate types.
+
+- id: hmac-sha256-webhook-signing
+  name: HMAC-SHA256 webhook payload signing
+  conforms: true
+  evidence: https://docs.worksome.com/webhooks/guides/handle-webhooks/
+  detail: >-
+    Every webhook carries a Signature header holding an HMAC-SHA256 digest of the raw body under a
+    shared secret, with constant-time comparison examples in PHP, JavaScript and Python. No
+    timestamp is included in the signed material, so there is no bound replay window.
+
+- id: iso-8601
+  name: ISO 8601 date and time
+  conforms: true
+  evidence: 'graphql/worksome.graphql (Date, DateTime, Time scalars); https://docs.worksome.com/errors/'
+  detail: 'Dates are YYYY-MM-DD throughout; the error reference names ISO 8601 explicitly as the required date format, and the timesheet JSON Schema enforces it with format: date and a pattern.'
+
+- id: iso-4217
+  name: ISO 4217 currency codes
+  conforms: true
+  evidence: 'graphql/worksome.graphql; https://docs.worksome.com/errors/ ("Use a valid ISO 4217 currency code (e.g., USD, GBP, EUR, DKK)")'
+  detail: Contract and invoice currency values follow ISO 4217, and the webhook contract object documents the same.
+
+- id: iso-3166-1-alpha-2
+  name: ISO 3166-1 alpha-2 country codes
+  conforms: true
+  evidence: 'graphql/worksome.graphql — the CountryCode enum is described as "An ISO 3166-1 alpha-2 country code"; Country.code and WorkerIdentification.nationality carry the same'
+  detail: >-
+    Country identity is standardised across the schema, which matters for a platform operating
+    across 150+ countries with jurisdiction-specific classification.
+
+- id: rfc9116
+  name: security.txt (RFC 9116)
+  conforms: false
+  evidence: 'https://www.worksome.com/.well-known/security.txt returns 404 (404 on all seven hosts probed)'
+  detail: No security.txt, and no anonymously reachable vulnerability disclosure policy. See security/worksome-domain-security.yml.
+
+- id: rfc9421-http-message-signatures
+  name: HTTP Message Signatures (RFC 9421)
+  conforms: false
+  evidence: https://docs.worksome.com/webhooks/guides/handle-webhooks/
+  detail: Webhook signing uses a bespoke bare-digest Signature header rather than the standardised Signature/Signature-Input construction.
+
+- id: a2a-agent-card
+  name: A2A Agent Card
+  conforms: false
+  evidence: '/.well-known/agent-card.json and /.well-known/agent.json return 404 on all seven Worksome hosts'
+  detail: No agent card is published. No manifest has been authored — an agent card asserts the provider serves it.
+
+- id: openapi
+  name: OpenAPI
+  conforms: false
+  evidence: 'https://api.worksome.com/openapi.json, /openapi.yaml, /swagger.json, /v1/openapi.json, /api-docs, /docs, /redoc all return 404'
+  detail: >-
+    Worksome publishes no OpenAPI because it ships no REST API. The GraphQL SDL is the contract,
+    and it is complete and openly introspectable. This is an honest absence of a format, not an
+    absence of a contract.
+
+- id: asyncapi
+  name: AsyncAPI
+  conforms: false
+  evidence: 'https://api.worksome.com/asyncapi.json returns 404; no AsyncAPI document in github.com/worksome'
+  detail: >-
+    17 webhook events are documented per-event with payload examples, but no AsyncAPI document
+    describes them. See asyncapi/worksome-webhooks.yml — the catalogue is captured, no spec was
+    generated.
+
+domain_standards:
+  market: Contingent workforce management / Freelancer Management System (FMS)
+  standard_declared_in_contract: false
+  detail: >-
+    Reward-only check, and nothing qualifies. The contract declares no domain standard for the
+    staffing and contingent-workforce market — no HR Open Standards (HR-XML) message types, no
+    SCIM schema URNs for worker provisioning, no OData $metadata surface, no HR-BA or SIF shapes.
+    The schema is a bespoke Worksome vocabulary throughout. This is not a defect: the contingent
+    workforce market has no widely adopted machine-readable interchange standard the way health
+    has FHIR or telecom has TM Forum, so there is nothing here that an integrator who "already
+    speaks the standard" could reuse. Recorded so the absence is not mistaken for an unchecked box.
+  regulatory_domain_vocabulary_present: true
+  regulatory_domain_vocabulary_detail: >-
+    What the contract DOES encode, richly, is regulatory classification vocabulary rather than an
+    interchange standard: a ClassificationType enum carrying IR35 and UK sole-trader
+    classification, a ComplianceName enum with IR35 and IR35_COMPANY_SETTINGS members, US
+    1099/W-2 and PAYE engagement types, NL Payroll and other jurisdiction-specific contract types,
+    and a ClassificationResult enum (EMPLOYEE / INDEPENDENT, with LIKELY_EMPLOYEE and
+    LIKELY_INDEPENDENT deprecated in favour of the definite forms). IR35 appears 26 times in the
+    schema. These are named regimes expressed as first-class enum members, which is materially
+    more useful to an integrator than the same concepts buried in free text — but they are
+    Worksome's encoding of the regimes, not a shared standard.
+
+compliance_certifications:
+  published_anonymously: false
+  soc2: unknown
+  iso27001: unknown
+  pci_dss: unknown
+  gdpr_dpa: true
+  gdpr_evidence: 'https://legal.worksome.com/document-center/data-processing-addendum (Data Processing Addendum published in the Legal Center)'
+  trust_center_probe:
+    url: https://trust.worksome.com/
+    status: 403
+    detail: >-
+      A host exists at trust.worksome.com but every request — including with a full browser
+      User-Agent — returns a Cloudflare interstitial ("Just a moment... Enable JavaScript and
+      cookies to continue"). This is a bot challenge, not a dead page: the host is provisioned and
+      something is served behind it. Its contents could not be read anonymously, so NO
+      certification is asserted here and no Compliance pointer is emitted in apis.yml. Recorded as
+      an unread surface rather than an absent one.
+  named_certifications: []
+  note: >-
+    No SOC 2, ISO 27001, PCI DSS, HIPAA or FedRAMP claim appears on the homepage, the pricing
+    page, the legal center index, or the developer docs. The Legal Center does publish a Data
+    Processing Addendum, a subprocessor list, an Acceptable Use Policy, a DMCA takedown policy and
+    a dedicated API Terms of Use.
+
+summary:
+  assertions: 26
+  conforming: 11
+  partial: 1
+  not_conforming: 13
+  strongest: [graphql, graphql-introspection, json-schema-2020-12, oauth2-authorization-code, iso-3166-1-alpha-2]
+  weakest: [oauth2-authorization-server-metadata, ratelimit-header-fields, idempotency-key-header, rfc9116, oauth2-scopes-published]

@@ -1,0 +1,1146 @@
+generated: '2026-09-04'
+method: derived
+source: graphql/worksome-introspection.json (unauthenticated introspection of https://api.worksome.com/graphql)
+note: 'Entity-relationship graph derived from the introspected GraphQL schema, not from an OpenAPI $ref graph —
+  Worksome publishes no OpenAPI. Relationships are read from field return types: a field returning an object type
+  is has_one, a field returning a list or a *Paginator wrapper is has_many. Only the 36 core business entities are
+  modelled here; the full schema carries 170 object types, most of which are settings, detail, and result wrappers
+  hanging off these. Identifiers are Relay-style opaque global IDs (base64 of "Type:id"), and the same ids appear
+  in webhook payloads, which is what lets a minimal webhook payload be resolved against this graph.'
+identifier_scheme:
+  style: Relay global object identification
+  encoding: base64("{TypeName}:{numeric id}")
+  examples:
+    Hire:1: SGlyZTox
+    Contract:1234: Q29udHJhY3Q6MTIzNA==
+    Company:1: Q29tcGFueTox
+  opaque: true
+  note: Treat as opaque handles obtained from the API. Decoding is possible but not a documented contract.
+central_entity:
+  name: Hire
+  rationale: 'Hire is the hub. Worksome''s own llms.txt calls it "the engagement of a worker by a company. Central
+    entity connecting most operations." It carries 75 fields and links out to Contract (three ways: latestContract,
+    activeContract, draftContract), Company, Job, Worker, Recruiter, supplier Account, Classification, Employment,
+    Compliance and Conversation. Timesheets, payment requests and milestones all hang off it. hireId is the stable
+    engagement reference across contract revisions.'
+lifecycle_backbone:
+  chain: Job -> JobCandidate -> Bid -> Hire -> Contract -> Timesheet -> PaymentRequest -> Invoice
+  note: The money path. A job posting attracts candidates; an accepted bid becomes a hire; the hire carries contracts;
+    time registered against the hire becomes timesheets; timesheets become payment requests; payment requests roll
+    into invoices, which can be offset by credit notes (modelled as Invoice records linked via originalInvoice/creditNotes).
+account_polymorphism:
+  interface: Account
+  implementations:
+  - Company
+  - Organisation
+  - Partner
+  - Recruiter
+  - Worker
+  implementations_source: introspection of __type(name "Account").possibleTypes
+  docs_discrepancy: >-
+    The Getting Started page states the Account interface is implemented by "Company, Organisation,
+    Partner, StaffingAgency, and Worker". Introspection returns Company, Organisation, Partner,
+    Recruiter, Worker — there is no StaffingAgency type anywhere in the 496-type schema. A client
+    that follows the docs and writes "... on StaffingAgency" fails schema validation with
+    GRAPHQL_VALIDATION_FAILED. The schema is the contract; the docs appear to use a display name.
+    Recorded because it is a real, reproducible defect in Worksome's published documentation.
+  note: The top-level accounts query returns the Account interface. Most company-context operations require a Company
+    id specifically, so callers must fragment (... on Company) and pass the right kind of id for the operation.
+entity_count: 36
+entities:
+- name: Hire
+  field_count: 75
+  description: A representation of an engagement between a company and a worker on a job.
+  query_access:
+  - hire
+  - hires
+  relationship_count: 24
+  relationships:
+  - field: latestContract
+    target: Contract
+    kind: has_one
+    paginated: false
+  - field: activeContract
+    target: Contract
+    kind: has_one
+    paginated: false
+  - field: draftContract
+    target: Contract
+    kind: has_one
+    paginated: false
+  - field: company
+    target: Company
+    kind: has_one
+    paginated: false
+  - field: job
+    target: Job
+    kind: has_one
+    paginated: false
+  - field: recruiter
+    target: Recruiter
+    kind: has_one
+    paginated: false
+  - field: supplier
+    target: Account
+    kind: has_one
+    paginated: false
+  - field: wcr
+    target: Wcr
+    kind: has_one
+    paginated: false
+  - field: classification
+    target: Classification
+    kind: has_one
+    paginated: false
+  - field: worker
+    target: Worker
+    kind: has_one
+    paginated: false
+  - field: conversation
+    target: Conversation
+    kind: has_one
+    paginated: false
+  - field: employment
+    target: Employment
+    kind: has_one
+    paginated: false
+  - field: compliances
+    target: Compliance
+    kind: has_many
+    paginated: false
+  - field: user
+    target: User
+    kind: has_one
+    paginated: false
+  - field: currentApprovalState
+    target: ApprovalState
+    kind: has_one
+    paginated: false
+  - field: owners
+    target: User
+    kind: has_many
+    paginated: false
+  - field: sourceHire
+    target: Hire
+    kind: has_one
+    paginated: false
+  - field: supplierHire
+    target: Hire
+    kind: has_one
+    paginated: false
+  - field: fees
+    target: Fee
+    kind: has_many
+    paginated: false
+  - field: markupFee
+    target: Fee
+    kind: has_one
+    paginated: false
+  - field: contracts
+    target: Contract
+    kind: has_many
+    paginated: true
+  - field: paymentRequests
+    target: PaymentRequest
+    kind: has_many
+    paginated: true
+  - field: milestones
+    target: Milestone
+    kind: has_many
+    paginated: true
+  - field: approvals
+    target: Approval
+    kind: has_many
+    paginated: true
+- name: Contract
+  field_count: 32
+  description: A legal agreement between a company and a worker within a hire.
+  query_access:
+  - contract
+  - contracts
+  relationship_count: 10
+  relationships:
+  - field: location
+    target: Address
+    kind: has_one
+    paginated: false
+  - field: job
+    target: Job
+    kind: has_one
+    paginated: false
+  - field: worker
+    target: Worker
+    kind: has_one
+    paginated: false
+  - field: company
+    target: Company
+    kind: has_one
+    paginated: false
+  - field: companyContact
+    target: User
+    kind: has_one
+    paginated: false
+  - field: businessEntity
+    target: BusinessEntity
+    kind: has_one
+    paginated: false
+  - field: companyLocation
+    target: Address
+    kind: has_one
+    paginated: false
+  - field: files
+    target: File
+    kind: has_many
+    paginated: false
+  - field: contractDocuments
+    target: ContractDocument
+    kind: has_many
+    paginated: false
+  - field: milestoneDetails
+    target: MilestoneDetail
+    kind: has_many
+    paginated: true
+- name: Company
+  field_count: 21
+  description: A company account — the primary hiring entity on Worksome.
+  query_access:
+  - company
+  - companies
+  relationship_count: 9
+  relationships:
+  - field: profile
+    target: Profile
+    kind: has_one
+    paginated: false
+  - field: settings
+    target: CompanySettings
+    kind: has_one
+    paginated: false
+  - field: address
+    target: Address
+    kind: has_one
+    paginated: false
+  - field: trustedContacts
+    target: TrustedContact
+    kind: has_many
+    paginated: true
+  - field: teamMembers
+    target: User
+    kind: has_many
+    paginated: true
+  - field: teamMembersAndOwners
+    target: User
+    kind: has_many
+    paginated: true
+  - field: organisations
+    target: Organisation
+    kind: has_many
+    paginated: true
+  - field: customFields
+    target: CustomField
+    kind: has_many
+    paginated: true
+  - field: staffingAgencies
+    target: CompanyRecruiter
+    kind: has_many
+    paginated: true
+- name: Worker
+  field_count: 32
+  description: A worker account — a freelancer or contractor who can be hired by companies on Worksome.
+  query_access:
+  - worker
+  relationship_count: 11
+  relationships:
+  - field: address
+    target: Address
+    kind: has_one
+    paginated: false
+  - field: market
+    target: Market
+    kind: has_one
+    paginated: false
+  - field: skills
+    target: Skill
+    kind: has_many
+    paginated: false
+  - field: profile
+    target: Profile
+    kind: has_one
+    paginated: false
+  - field: hiresWithAttribution
+    target: Hire
+    kind: has_many
+    paginated: false
+  - field: primaryBusinessEntity
+    target: BusinessEntity
+    kind: has_one
+    paginated: false
+  - field: clients
+    target: Client
+    kind: has_many
+    paginated: false
+  - field: insurances
+    target: WorkerInsurance
+    kind: has_many
+    paginated: false
+  - field: identification
+    target: WorkerIdentification
+    kind: has_one
+    paginated: false
+  - field: businessEntities
+    target: BusinessEntity
+    kind: has_many
+    paginated: true
+  - field: hires
+    target: Hire
+    kind: has_many
+    paginated: true
+- name: Job
+  field_count: 78
+  description: A job posting created by a company on Worksome.
+  query_access:
+  - job
+  - jobs
+  relationship_count: 18
+  relationships:
+  - field: skills
+    target: Skill
+    kind: has_many
+    paginated: false
+  - field: location
+    target: Address
+    kind: has_one
+    paginated: false
+  - field: project
+    target: Project
+    kind: has_one
+    paginated: false
+  - field: attachments
+    target: File
+    kind: has_many
+    paginated: false
+  - field: languages
+    target: Language
+    kind: has_many
+    paginated: false
+  - field: industries
+    target: Industry
+    kind: has_many
+    paginated: false
+  - field: owners
+    target: User
+    kind: has_many
+    paginated: false
+  - field: customFieldValues
+    target: CustomFieldValue
+    kind: has_many
+    paginated: false
+  - field: company
+    target: Company
+    kind: has_one
+    paginated: false
+  - field: sourceJob
+    target: Job
+    kind: has_one
+    paginated: false
+  - field: supplierJob
+    target: Job
+    kind: has_one
+    paginated: false
+  - field: hires
+    target: Hire
+    kind: has_many
+    paginated: true
+  - field: conversations
+    target: Conversation
+    kind: has_many
+    paginated: true
+  - field: notes
+    target: Note
+    kind: has_many
+    paginated: true
+  - field: paymentRequests
+    target: PaymentRequest
+    kind: has_many
+    paginated: true
+  - field: bids
+    target: Bid
+    kind: has_many
+    paginated: true
+  - field: shares
+    target: JobShare
+    kind: has_many
+    paginated: true
+  - field: jobCandidates
+    target: JobCandidate
+    kind: has_many
+    paginated: true
+- name: Invoice
+  field_count: 24
+  description: An invoice issued to a company for approved worker payment requests.
+  query_access:
+  - invoice
+  - invoices
+  relationship_count: 6
+  relationships:
+  - field: company
+    target: Company
+    kind: has_one
+    paginated: false
+  - field: payerBusinessEntity
+    target: BusinessEntity
+    kind: has_one
+    paginated: false
+  - field: payeeBusinessEntity
+    target: BusinessEntity
+    kind: has_one
+    paginated: false
+  - field: creditNotes
+    target: Invoice
+    kind: has_many
+    paginated: false
+  - field: originalInvoice
+    target: Invoice
+    kind: has_one
+    paginated: false
+  - field: rows
+    target: InvoiceRow
+    kind: has_many
+    paginated: true
+- name: PaymentRequest
+  field_count: 55
+  description: A payment request.
+  query_access:
+  - paymentRequest
+  - paymentRequests
+  relationship_count: 19
+  relationships:
+  - field: worker
+    target: Worker
+    kind: has_one
+    paginated: false
+  - field: recruiter
+    target: Recruiter
+    kind: has_one
+    paginated: false
+  - field: company
+    target: Company
+    kind: has_one
+    paginated: false
+  - field: invoice
+    target: Invoice
+    kind: has_one
+    paginated: false
+  - field: approvedBy
+    target: User
+    kind: has_one
+    paginated: false
+  - field: hire
+    target: Hire
+    kind: has_one
+    paginated: false
+  - field: job
+    target: Job
+    kind: has_one
+    paginated: false
+  - field: message
+    target: Message
+    kind: has_one
+    paginated: false
+  - field: timesheet
+    target: Timesheet
+    kind: has_one
+    paginated: false
+  - field: legacyTimesheet
+    target: LegacyTimesheet
+    kind: has_one
+    paginated: false
+  - field: sourcePaymentRequest
+    target: PaymentRequest
+    kind: has_one
+    paginated: false
+  - field: clientPaymentRequest
+    target: PaymentRequest
+    kind: has_one
+    paginated: false
+  - field: fees
+    target: Fee
+    kind: has_many
+    paginated: false
+  - field: files
+    target: File
+    kind: has_many
+    paginated: true
+  - field: expenseReports
+    target: ExpenseReport
+    kind: has_many
+    paginated: true
+  - field: batches
+    target: Batch
+    kind: has_many
+    paginated: true
+  - field: milestones
+    target: Milestone
+    kind: has_many
+    paginated: true
+  - field: overtimes
+    target: Overtime
+    kind: has_many
+    paginated: true
+  - field: supplierInvoices
+    target: SupplierInvoice
+    kind: has_many
+    paginated: true
+- name: TrustedContact
+  field_count: 27
+  description: A trusted contact — a worker in a company's Talent Pool.
+  query_access:
+  - trustedContact
+  - trustedContacts
+  relationship_count: 11
+  relationships:
+  - field: worker
+    target: Worker
+    kind: has_one
+    paginated: false
+  - field: company
+    target: Company
+    kind: has_one
+    paginated: false
+  - field: invitedByUser
+    target: User
+    kind: has_one
+    paginated: false
+  - field: attachments
+    target: File
+    kind: has_many
+    paginated: false
+  - field: skills
+    target: Skill
+    kind: has_many
+    paginated: false
+  - field: approvedByUser
+    target: User
+    kind: has_one
+    paginated: false
+  - field: customFieldValues
+    target: CustomFieldValue
+    kind: has_many
+    paginated: false
+  - field: onboardingDocuments
+    target: OnboardingDocument
+    kind: has_many
+    paginated: false
+  - field: compliances
+    target: Compliance
+    kind: has_many
+    paginated: false
+  - field: tags
+    target: Tag
+    kind: has_many
+    paginated: true
+  - field: notes
+    target: Note
+    kind: has_many
+    paginated: true
+- name: Project
+  field_count: 13
+  description: A project with a budget containing one or more jobs.
+  query_access:
+  - project
+  - projects
+  relationship_count: 4
+  relationships:
+  - field: creator
+    target: User
+    kind: has_one
+    paginated: false
+  - field: company
+    target: Company
+    kind: has_one
+    paginated: false
+  - field: owners
+    target: User
+    kind: has_many
+    paginated: false
+  - field: jobs
+    target: Job
+    kind: has_many
+    paginated: true
+- name: Timesheet
+  field_count: 10
+  description: A timesheet submitted by a worker for a hire.
+  query_access:
+  - timesheet
+  - timesheets
+  relationship_count: 6
+  relationships:
+  - field: worker
+    target: Worker
+    kind: has_one
+    paginated: false
+  - field: hire
+    target: Hire
+    kind: has_one
+    paginated: false
+  - field: paymentRequests
+    target: PaymentRequest
+    kind: has_many
+    paginated: true
+  - field: registrations
+    target: TimesheetRegistration
+    kind: has_many
+    paginated: true
+  - field: files
+    target: File
+    kind: has_many
+    paginated: true
+  - field: overtimes
+    target: Overtime
+    kind: has_many
+    paginated: true
+- name: TimesheetRegistration
+  field_count: 12
+  description: A registration for a timesheet.
+  query_access: null
+  relationship_count: 1
+  relationships:
+  - field: customFieldValues
+    target: CustomFieldValue
+    kind: has_many
+    paginated: false
+- name: JobCandidate
+  field_count: 33
+  description: The relation between a job and a worker, making them a candidate for the job.
+  query_access:
+  - jobCandidate
+  - jobCandidates
+  relationship_count: 13
+  relationships:
+  - field: job
+    target: Job
+    kind: has_one
+    paginated: false
+  - field: worker
+    target: Worker
+    kind: has_one
+    paginated: false
+  - field: bid
+    target: Bid
+    kind: has_one
+    paginated: false
+  - field: hire
+    target: Hire
+    kind: has_one
+    paginated: false
+  - field: jobShare
+    target: JobShare
+    kind: has_one
+    paginated: false
+  - field: owner
+    target: Account
+    kind: has_one
+    paginated: false
+  - field: statusSetByUser
+    target: User
+    kind: has_one
+    paginated: false
+  - field: stepSetByUser
+    target: User
+    kind: has_one
+    paginated: false
+  - field: createdByUser
+    target: User
+    kind: has_one
+    paginated: false
+  - field: updatedByUser
+    target: User
+    kind: has_one
+    paginated: false
+  - field: sourceCandidate
+    target: JobCandidate
+    kind: has_one
+    paginated: false
+  - field: presentedCandidate
+    target: JobCandidate
+    kind: has_one
+    paginated: false
+  - field: stageHistory
+    target: JobCandidateStageHistoryEntry
+    kind: has_many
+    paginated: false
+- name: Compliance
+  field_count: 11
+  description: A compliance requirement that must be met for business processes to proceed.
+  query_access:
+  - compliance
+  relationship_count: 3
+  relationships:
+  - field: action
+    target: ComplianceAction
+    kind: has_one
+    paginated: false
+  - field: validationDetails
+    target: ComplianceValidationDetails
+    kind: has_one
+    paginated: false
+  - field: data
+    target: ComplianceData
+    kind: has_many
+    paginated: false
+- name: Classification
+  field_count: 32
+  description: A classification represents a worker classification (SDS/WCR) for a hire.
+  query_access:
+  - classification
+  - classifications
+  relationship_count: 7
+  relationships:
+  - field: user
+    target: User
+    kind: has_one
+    paginated: false
+  - field: hire
+    target: Hire
+    kind: has_one
+    paginated: false
+  - field: company
+    target: Company
+    kind: has_one
+    paginated: false
+  - field: freelancer
+    target: Worker
+    kind: has_one
+    paginated: false
+  - field: result
+    target: ClassificationResultDetails
+    kind: has_one
+    paginated: false
+  - field: overrideUser
+    target: User
+    kind: has_one
+    paginated: false
+  - field: currentApprovalState
+    target: ApprovalState
+    kind: has_one
+    paginated: false
+- name: Approval
+  field_count: 11
+  description: An approval flow that defines a review process triggered by specific events on hires.
+  query_access:
+  - approval
+  - approvals
+  relationship_count: 2
+  relationships:
+  - field: company
+    target: Company
+    kind: has_one
+    paginated: false
+  - field: approvalRules
+    target: ApprovalRule
+    kind: has_many
+    paginated: false
+- name: ApprovalRule
+  field_count: 8
+  description: A rule within an approval flow that defines when approval is required and who must approve.
+  query_access:
+  - approvalRule
+  - approvalRules
+  relationship_count: 4
+  relationships:
+  - field: approval
+    target: Approval
+    kind: has_one
+    paginated: false
+  - field: fields
+    target: CustomField
+    kind: has_many
+    paginated: false
+  - field: rules
+    target: WorkflowVariableRule
+    kind: has_many
+    paginated: false
+  - field: approvers
+    target: Approver
+    kind: has_many
+    paginated: false
+- name: Webhook
+  field_count: 13
+  description: The webhook definition.
+  query_access:
+  - webhook
+  - webhooks
+  relationship_count: 0
+  relationships: []
+- name: CustomField
+  field_count: 27
+  description: A custom field.
+  query_access:
+  - customField
+  - customFields
+  relationship_count: 6
+  relationships:
+  - field: user
+    target: User
+    kind: has_one
+    paginated: false
+  - field: account
+    target: Account
+    kind: has_one
+    paginated: false
+  - field: customFieldOptions
+    target: CustomFieldOption
+    kind: has_many
+    paginated: false
+  - field: settings
+    target: CustomFieldSettings
+    kind: has_one
+    paginated: false
+  - field: customFieldValues
+    target: CustomFieldValue
+    kind: has_many
+    paginated: false
+  - field: rule
+    target: WorkflowVariableRule
+    kind: has_one
+    paginated: false
+- name: Milestone
+  field_count: 7
+  description: A deliverable-based milestone within a hire.
+  query_access:
+  - milestone
+  - milestones
+  relationship_count: 3
+  relationships:
+  - field: details
+    target: MilestoneDetail
+    kind: has_one
+    paginated: false
+  - field: hire
+    target: Hire
+    kind: has_one
+    paginated: false
+  - field: paymentRequests
+    target: PaymentRequest
+    kind: has_many
+    paginated: true
+- name: Employment
+  field_count: 16
+  description: An employment record for a worker engaged on payroll through Worksome or an Employer of Record (EoR)
+    partner.
+  query_access:
+  - employment
+  - employments
+  relationship_count: 5
+  relationships:
+  - field: worker
+    target: Worker
+    kind: has_one
+    paginated: false
+  - field: employerOfRecord
+    target: Account
+    kind: has_one
+    paginated: false
+  - field: hiringManagers
+    target: User
+    kind: has_many
+    paginated: false
+  - field: hires
+    target: Hire
+    kind: has_many
+    paginated: true
+  - field: employmentCosts
+    target: EmploymentCost
+    kind: has_many
+    paginated: true
+- name: Recruiter
+  field_count: 10
+  description: A staffing agency account that sources and manages workers on behalf of companies.
+  query_access:
+  - recruiter
+  - recruiters
+  relationship_count: 6
+  relationships:
+  - field: market
+    target: Market
+    kind: has_one
+    paginated: false
+  - field: availableMarkets
+    target: AvailableMarket
+    kind: has_many
+    paginated: false
+  - field: owner
+    target: User
+    kind: has_one
+    paginated: false
+  - field: clients
+    target: CompanyRecruiter
+    kind: has_many
+    paginated: false
+  - field: candidates
+    target: RecruiterCandidate
+    kind: has_many
+    paginated: false
+  - field: insurances
+    target: WorkerInsurance
+    kind: has_many
+    paginated: false
+- name: CompanyRecruiter
+  field_count: 23
+  description: A company recruiter relationship.
+  query_access:
+  - companyRecruiter
+  - companyRecruiters
+  relationship_count: 8
+  relationships:
+  - field: recruiter
+    target: Recruiter
+    kind: has_one
+    paginated: false
+  - field: company
+    target: Company
+    kind: has_one
+    paginated: false
+  - field: tags
+    target: Tag
+    kind: has_many
+    paginated: false
+  - field: customFieldValues
+    target: CustomFieldValue
+    kind: has_many
+    paginated: false
+  - field: onboardingDocuments
+    target: OnboardingDocument
+    kind: has_many
+    paginated: false
+  - field: fees
+    target: Fee
+    kind: has_many
+    paginated: false
+  - field: compliances
+    target: Compliance
+    kind: has_many
+    paginated: false
+  - field: notes
+    target: Note
+    kind: has_many
+    paginated: true
+- name: Bid
+  field_count: 15
+  description: Represents a bid sent on a job.
+  query_access:
+  - bid
+  - bids
+  relationship_count: 7
+  relationships:
+  - field: job
+    target: Job
+    kind: has_one
+    paginated: false
+  - field: conversation
+    target: Conversation
+    kind: has_one
+    paginated: false
+  - field: message
+    target: Message
+    kind: has_one
+    paginated: false
+  - field: worker
+    target: Worker
+    kind: has_one
+    paginated: false
+  - field: supplier
+    target: Account
+    kind: has_one
+    paginated: false
+  - field: files
+    target: File
+    kind: has_many
+    paginated: false
+  - field: fees
+    target: Fee
+    kind: has_many
+    paginated: false
+- name: UserGroup
+  field_count: 6
+  description: A named group of company team members.
+  query_access:
+  - userGroup
+  - userGroups
+  relationship_count: 2
+  relationships:
+  - field: company
+    target: Company
+    kind: has_one
+    paginated: false
+  - field: users
+    target: User
+    kind: has_many
+    paginated: true
+- name: Workflow
+  field_count: 2
+  description: A workflow — an alternative tree-structured view of an approval flow for hires.
+  query_access:
+  - workflow
+  - workflows
+  relationship_count: 1
+  relationships:
+  - field: nodes
+    target: Nodeable
+    kind: has_many
+    paginated: false
+- name: Batch
+  field_count: 9
+  description: A batch of items for processing.
+  query_access:
+  - batch
+  relationship_count: 2
+  relationships:
+  - field: account
+    target: Account
+    kind: has_one
+    paginated: false
+  - field: items
+    target: BatchItem
+    kind: has_many
+    paginated: true
+- name: Organisation
+  field_count: 5
+  description: An organisation — a parent entity that groups one or more companies (divisions) under a shared structure.
+  query_access:
+  - organisation
+  relationship_count: 1
+  relationships:
+  - field: divisions
+    target: Company
+    kind: has_many
+    paginated: true
+- name: Partner
+  field_count: 9
+  description: A partner account — an employment or compliance partner that facilitates hiring on behalf of companies.
+  query_access:
+  - partner
+  relationship_count: 3
+  relationships:
+  - field: address
+    target: Address
+    kind: has_one
+    paginated: false
+  - field: primaryBusinessEntity
+    target: BusinessEntity
+    kind: has_one
+    paginated: false
+  - field: primaryProfile
+    target: Profile
+    kind: has_one
+    paginated: false
+- name: User
+  field_count: 11
+  description: A user who can sign in to Worksome and act on behalf of one or more accounts.
+  query_access: null
+  relationship_count: 0
+  relationships: []
+- name: File
+  field_count: 11
+  description: A file.
+  query_access:
+  - file
+  - files
+  relationship_count: 2
+  relationships:
+  - field: owner
+    target: Account
+    kind: has_one
+    paginated: false
+  - field: tags
+    target: Tag
+    kind: has_many
+    paginated: false
+- name: Note
+  field_count: 10
+  description: A note for an entity.
+  query_access: null
+  relationship_count: 3
+  relationships:
+  - field: author
+    target: User
+    kind: has_one
+    paginated: false
+  - field: notable
+    target: Notable
+    kind: has_one
+    paginated: false
+  - field: account
+    target: Account
+    kind: has_one
+    paginated: false
+- name: Fee
+  field_count: 10
+  description: A fee attached to a feeable entity (e.g. Hire, PaymentRequest, staffing agency relationship).
+  query_access: null
+  relationship_count: 2
+  relationships:
+  - field: recipient
+    target: Account
+    kind: has_one
+    paginated: false
+  - field: parent
+    target: Fee
+    kind: has_one
+    paginated: false
+- name: Gate
+  field_count: 7
+  description: A gate represents a collection of related compliance requirements.
+  query_access:
+  - gate
+  relationship_count: 1
+  relationships:
+  - field: compliances
+    target: Compliance
+    kind: has_many
+    paginated: false
+- name: BusinessEntity
+  field_count: 9
+  description: A business entity.
+  query_access: null
+  relationship_count: 0
+  relationships: []
+- name: JobShare
+  field_count: 5
+  description: The contacts that the job was shared with.
+  query_access:
+  - jobShares
+  relationship_count: 2
+  relationships:
+  - field: account
+    target: JobShareableAccount
+    kind: has_one
+    paginated: false
+  - field: job
+    target: Job
+    kind: has_one
+    paginated: false
+- name: Conversation
+  field_count: 12
+  description: A conversation between a company and a worker.
+  query_access:
+  - conversation
+  - conversations
+  relationship_count: 4
+  relationships:
+  - field: job
+    target: Job
+    kind: has_one
+    paginated: false
+  - field: latestMessage
+    target: Message
+    kind: has_one
+    paginated: false
+  - field: messages
+    target: Message
+    kind: has_many
+    paginated: true
+  - field: participants
+    target: Participant
+    kind: has_many
+    paginated: true

@@ -1,0 +1,82 @@
+generated: '2026-09-04'
+method: searched
+source: https://docs.worksome.com/graphql/guides/rate-limiting/ + https://docs.worksome.com/errors/
+note: >-
+  Worksome publishes a documented per-token rate limit AND, unusually, documents the
+  absence of the runtime signal an agent would normally rely on. The federation gateway in
+  front of the platform does not propagate X-RateLimit-* response headers, and the docs say
+  so explicitly rather than leaving an integrator to discover it. It also masks the status
+  code: the platform returns HTTP 429 with Retry-After, but the gateway forwards that to the
+  client as HTTP 200 carrying a DOWNSTREAM_SERVICE_ERROR entry in the GraphQL errors array
+  with the message "Too Many Requests". A client therefore cannot detect throttling from the
+  HTTP status or from headers, and must string-match the error body. Worksome's own guidance
+  is to count requests client-side and back off proactively.
+
+limit_count: 1
+
+rate_limits:
+- name: Default per-token limit
+  scope: per-token
+  window: 1 minute
+  window_type: rolling
+  limit: 60
+  unit: requests
+  burst: null
+  applies_to: All authenticated GraphQL requests to https://api.worksome.com/graphql
+  negotiable: true
+  negotiation_note: >-
+    "The exact rate limit for your integration may vary depending on your plan and
+    agreement. Contact your Worksome account representative if you need a higher throughput
+    allocation." Only the default tier is published.
+
+- name: Unauthenticated IP limit
+  scope: per-ip
+  window: 1 minute
+  window_type: rolling
+  limit: null
+  unit: requests
+  applies_to: Unauthenticated requests, where permitted
+  note: >-
+    The docs state unauthenticated requests are rate-limited by IP at "a lower threshold"
+    but do not publish the number. Recorded as a documented limit with an unpublished value,
+    not as an absence.
+
+query_complexity:
+  enforced: true
+  budget_published: false
+  note: >-
+    Beyond request counting, the API evaluates query complexity: each field carries a cost,
+    and a query exceeding the maximum allowed complexity is rejected BEFORE execution. The
+    numeric budget and per-field costs are not published, so a client cannot compute a query's
+    cost ahead of time. Documented mitigations are to request only needed fields, limit nesting
+    depth, and page with first: 25 rather than first: 100.
+
+response_headers:
+  ratelimit_limit: null
+  ratelimit_remaining: null
+  ratelimit_reset: null
+  retry_after: >-
+    Set by the platform on its 429, but NOT propagated to the client by the federation
+    gateway.
+  headers_exposed: false
+  headers_exposed_note: >-
+    Documented explicitly: "The federation gateway in front of the platform does not
+    currently propagate X-RateLimit-* response headers. Build your rate-limit awareness
+    around your own request count and the 429/error response described below, not around
+    per-response headers."
+
+exhaustion:
+  http_status_at_origin: 429
+  http_status_seen_by_client: 200
+  error_code: DOWNSTREAM_SERVICE_ERROR
+  error_message_match: /too many requests/i
+  discriminator: >-
+    extensions.code == "DOWNSTREAM_SERVICE_ERROR" AND the message matches "Too Many
+    Requests". DOWNSTREAM_SERVICE_ERROR is a shared code that also covers validation,
+    authentication, authorization and platform failures, so the message string is the only
+    thing separating throttling from those.
+
+backoff:
+  recommended: exponential with jitter
+  published_schedule: 1s, 2s, 4s over 3 attempts
+  source: https://docs.worksome.com/graphql/guides/rate-limiting/

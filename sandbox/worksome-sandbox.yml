@@ -1,0 +1,90 @@
+generated: '2026-09-04'
+method: searched
+source: https://docs.worksome.com/graphql/ + https://docs.worksome.com/integrations/timesheet-integration/ + https://docs.worksome.com/integrations/cli/ + https://docs.worksome.com/authentication/
+note: >-
+  Worksome has a sandbox but does not have self-service access to one. A sandbox environment is
+  referenced in the timesheet integration guide, and the CLI's profile system is clearly built
+  for pointing at more than one environment, but there is no signup URL, no test-mode key
+  prefix, no documented sandbox hostname, and no published test data. Access is arranged through
+  a Worksome customer success manager. What IS anonymously available is the GraphiQL explorer at
+  the production endpoint and open schema introspection — enough to explore the contract, not
+  enough to exercise it.
+
+console:
+  available: true
+  type: GraphiQL
+  url: https://api.worksome.com/graphql
+  authentication_required_to_load: false
+  authentication_required_to_query_data: true
+  note: >-
+    The production endpoint doubles as a GraphQL explorer using the official GraphiQL interface.
+    The docs present it as the place to test queries and use introspection to discover the API.
+    Introspection specifically works with no credentials — an anonymous POST returns the full
+    496-type schema — so the contract is explorable before any account exists. Any query
+    returning actual data still needs a token.
+  source: https://docs.worksome.com/graphql/
+
+sandbox_environment:
+  available: true
+  self_service: false
+  signup_url: null
+  hostname_published: false
+  access: Request via your Worksome customer success manager.
+  documented_at: https://docs.worksome.com/integrations/timesheet-integration/
+  capabilities:
+  - Submitting timesheet registrations creates timesheets in the sandbox.
+  limitations:
+  - >-
+      Processing timesheets into payment requests is NOT automatic in the sandbox. The docs state
+      this trigger "is not currently available automatically in the sandbox" and requires
+      coordination with a customer success manager. The money-moving half of the flow therefore
+      cannot be exercised end to end without Worksome involvement.
+  note: >-
+    Recorded verbatim as documented. No sandbox base URL is published, so this artifact cannot
+    name the host an integrator would call.
+
+environment_switching:
+  mechanism: CLI profiles
+  flags: ['--endpoint / WORKSOME_ENDPOINT', '--profile / WORKSOME_PROFILE']
+  config_file: ~/.worksome/config.yaml
+  note: >-
+    The CLI accepts an arbitrary endpoint URL and supports named profiles (the docs use "stage"
+    as the example), which is the mechanism by which a sandbox would be addressed. Profile names
+    are arbitrary; the endpoints they point at are not published.
+  source: https://docs.worksome.com/integrations/cli/
+
+test_credentials:
+  test_key_prefix: null
+  live_key_prefix: null
+  distinguishable: false
+  note: >-
+    Personal Access Tokens carry no documented prefix and nothing in the token format signals
+    which environment it belongs to. An agent holding a Worksome token cannot tell from the token
+    whether it is pointed at production.
+
+test_data:
+  test_cards: null
+  test_identifiers: null
+  fixtures: null
+  time_simulation: null
+  note: >-
+    No magic test identifiers, seeded fixtures, test clocks, or trigger tooling are published.
+    Every example id in the docs (SGlyZTox, Q29udHJhY3Q6MTIzNA==, V29ya2VyOjIzNDU2) is an
+    illustrative base64 Global ID in prose, not a working sandbox record.
+
+rehearsal:
+  cli_dry_run: true
+  cli_dry_run_flag: --dry-run
+  cli_dry_run_behaviour: Prints the GraphQL operation and variables that would be sent, without executing.
+  api_dry_run: false
+  note: >-
+    The only rehearsal mechanism reaches the CLI, not the API. See conventions/worksome-conventions.yml
+    dry_run_mode.
+
+webhook_testing:
+  replay: retryWebhookEvent mutation re-delivers a specific webhook event
+  logs: webhookEvents and webhookEventLogs queries expose delivery attempts
+  management: 'Webhooks can be created, listed and deleted programmatically (createWebhook / updateWebhook / deleteWebhook, or worksome webhooks create|list|delete)'
+  note: >-
+    Webhook testing is the best-served part of the surface: a consumer can register an endpoint,
+    inspect the delivery log, and force a redelivery entirely through the public API.

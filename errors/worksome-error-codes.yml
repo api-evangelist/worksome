@@ -1,0 +1,150 @@
+generated: '2026-09-04'
+method: searched
+source: https://docs.worksome.com/errors/ + https://docs.worksome.com/graphql/guides/error-handling/ + https://docs.worksome.com/support/ + https://docs.worksome.com/integrations/timesheet-integration/
+note: >-
+  Worksome publishes a real error reference with a machine-readable discriminator, which is
+  rare for a GraphQL API. The catalogue is small and structural rather than a long numeric
+  registry: four top-level extensions.code values, of which one — DOWNSTREAM_SERVICE_ERROR —
+  is heavily overloaded and must be sub-discriminated by the SHAPE of the extensions object
+  rather than by a code. Worksome documents that sub-discrimination explicitly, which is what
+  makes the catalogue usable. There is no RFC 9457 problem+json surface: this is GraphQL, so
+  errors ride in the response body and almost every failure arrives over HTTP 200.
+format: graphql-errors
+problem_json: false
+rfc9457: false
+
+envelope:
+  location: errors[] array in the JSON response body
+  fields: [message, path, locations, extensions]
+  extensions_fields: [code, serviceName, validation, guards]
+  control_flow_field: extensions.code
+  guidance: >-
+    "Use the code (not the message) to drive your control flow." The one documented exception
+    is rate limiting, where the code is not distinguishing and the message must be matched.
+  partial_success: >-
+    GraphQL returns data and errors together. A field the caller may not read is null in data
+    with a corresponding errors entry carrying its path. The docs instruct always parsing the
+    errors array even when data is present.
+
+codes:
+- code: GRAPHQL_VALIDATION_FAILED
+  http: 200
+  retryable: false
+  layer: gateway
+  title: Query does not validate against the schema
+  description: The query references a field, argument, or type that does not exist.
+  example_message: Cannot query field "nonExistent" on type "Hire".
+  remediation: Check the field, argument, or type against the schema reference. Fix the query; retrying is pointless.
+
+- code: GRAPHQL_PARSE_FAILED
+  http: 200
+  retryable: false
+  layer: gateway
+  title: GraphQL document could not be parsed
+  description: Syntax error in the GraphQL document — unclosed braces, missing commas, invalid syntax.
+  remediation: Fix the document syntax.
+
+- code: BAD_REQUEST
+  http: 400
+  retryable: false
+  layer: gateway
+  title: HTTP request shape is wrong
+  description: >-
+    The request was rejected before reaching GraphQL. Causes are a missing or wrong
+    Content-Type, a GET without an apollo-require-preflight header (rejected as potential
+    CSRF), or a body that is not valid JSON.
+  remediation: Send Content-Type application/json on every POST; use POST, or add apollo-require-preflight true for a deliberate GET; ensure the body is a JSON object with query and optional variables/operationName.
+
+- code: BAD_USER_INPUT
+  http: 200
+  retryable: false
+  layer: gateway
+  title: Variable value does not satisfy its declared type
+  description: A GraphQL variable was supplied with a value the schema type rejects — typically an enum value that does not exist.
+  example_message: Variable "$status" got invalid value "UNKNOWN" at "status[2]"; Value "UNKNOWN" does not exist in "InvoiceStatus" enum.
+  remediation: Check the variable value against the enum or scalar in the schema reference.
+  source: https://docs.worksome.com/support/
+
+- code: DOWNSTREAM_SERVICE_ERROR
+  http: 200
+  http_at_origin: varies (400, 401, 403, 429, 5xx)
+  retryable: sometimes
+  layer: platform
+  title: The query was valid but the platform rejected or failed the operation
+  description: >-
+    The single overloaded code. It covers input validation, authentication, authorization,
+    business-rule rejection, rate limiting, and platform failure. extensions.serviceName is
+    "platform". Discriminate by shape, not by code.
+  sub_types:
+  - name: validation
+    discriminator: extensions.validation is present (a map of dot-notation field paths to message arrays)
+    retryable: false
+    remediation: Fix the named input fields and resubmit.
+  - name: authentication
+    discriminator: 'extensions.guards == ["api"] AND message == "Unauthenticated."'
+    retryable: false
+    remediation: Supply or renew the Authorization Bearer token.
+  - name: authorization
+    discriminator: No validation map and no guards; message is "You are not authorized to perform this action." with the operation in path. The docs state plainly there is NO machine-readable authorization tag.
+    retryable: false
+    remediation: Use a token with the required role, in the right company scope.
+  - name: rate_limit
+    discriminator: message matches /too many requests/i
+    retryable: true
+    remediation: Exponential backoff with jitter (1s, 2s, 4s). No Retry-After or X-RateLimit-* header reaches the client.
+  - name: platform_failure
+    discriminator: Generic message, serviceName "platform", no validation map
+    retryable: true
+    remediation: Retry with exponential backoff up to 3 times; if it persists, contact support with the full error response and the query.
+
+validation_errors:
+  shape: extensions.validation is an object mapping dot-notation input paths to arrays of human-readable messages
+  example_path: input.startDate
+  documented_patterns:
+  - pattern: 'The {field} field is required.'
+    resolution: Include the required field in the input.
+  - pattern: 'The {field} is not a valid date.'
+    resolution: Use ISO 8601 YYYY-MM-DD.
+  - pattern: 'The selected {field} is invalid.'
+    resolution: Verify the id exists, is the right entity type, and is reachable by the authenticated user.
+  - pattern: 'The rate must be a number.'
+    resolution: Provide an integer or float.
+  - pattern: 'The selected currency is invalid.'
+    resolution: Use a valid ISO 4217 code (USD, GBP, EUR, DKK).
+
+operation_level_rejection_codes:
+  operation: createCustomTimesheet
+  enum: CustomTimesheetRejectionReason
+  note: >-
+    The timesheet mutation does not use the errors array for per-row failures. It returns a
+    200 with a business-level body — providedRegistrations, successfulRegistrations, and a
+    rejectedRegistrations array carrying one machine-readable reason plus a human message per
+    rejected row. Partial success is normal and there is no top-level GraphQL error.
+  codes:
+  - code: MISSING_REQUIRED_FIELD
+    meaning: One of hireId, reportedDate, hours, externalId is missing, empty, or unparseable.
+    action: Fix the payload and resubmit. The message names the offending field.
+  - code: HIRE_NOT_FOUND
+    meaning: >-
+      The hireId does not resolve to a hire the authenticated account can submit timesheets
+      for. Deliberately conflates "does not exist" with "exists but you have no access", so
+      access scopes are not leaked.
+    action: Verify the hireId belongs to one of your Worksome-connected companies.
+  - code: DATE_OUTSIDE_CONTRACT_PERIOD
+    meaning: reportedDate falls before the contract startDate or after endDate.
+    action: Correct the date or stop submitting once the hire has ended. Not raised for US-payroll hires, where Worksome reconciles date-vs-contract discrepancies itself.
+  source: https://docs.worksome.com/integrations/timesheet-integration/
+
+http_status_reality:
+  note: >-
+    The most consequential fact in this catalogue: errors arrive over HTTP 200 in almost every
+    case. The only documented non-200 is BAD_REQUEST (400) from the gateway. A 429 raised by
+    the platform is converted to a 200 before the client sees it. Any client that branches on
+    response.status will treat authentication failures, authorization failures, validation
+    failures and throttling as successes.
+
+summary:
+  code_count: 5
+  overloaded_codes: 1
+  operation_level_codes: 3
+  machine_readable_authorization_tag: false

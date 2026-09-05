@@ -1,0 +1,186 @@
+generated: '2026-09-04'
+method: searched
+source: https://docs.worksome.com/webhooks/ + https://docs.worksome.com/webhooks/reference/ + https://docs.worksome.com/webhooks/guides/introduction/ + https://docs.worksome.com/webhooks/guides/handle-webhooks/ + the eight per-event reference pages
+note: >-
+  Worksome publishes a documented, per-event webhook catalogue with full payload examples but no
+  AsyncAPI document — /asyncapi.yaml and /asyncapi.json are not served on any host, and the
+  GitHub organisation publishes none. This artifact captures the real event surface as
+  documented; NO AsyncAPI spec has been generated, because generating one would assert a machine
+  contract Worksome does not publish. Type Webhooks is wired in apis.yml; type AsyncAPI is not.
+asyncapi_published: false
+asyncapi_probed:
+- {url: 'https://api.worksome.com/asyncapi.json', status: 404}
+- {url: 'https://api.worksome.com/openapi.json', status: 404}
+
+transport:
+  protocol: HTTPS
+  method: POST
+  content_type: application/json
+  direction: outbound (Worksome to consumer)
+  subscription_management: >-
+    Endpoint URL and shared secret are agreed with Worksome. Subscriptions can also be managed
+    programmatically — createWebhook, updateWebhook, deleteWebhook mutations and webhooks /
+    webhook queries, or worksome webhooks create|list|delete from the CLI.
+
+security:
+  signature_algorithm: HMAC-SHA256
+  signature_header: Signature
+  signed_payload: the raw request body, before parsing
+  secret: shared secret agreed with Worksome out of band
+  verification_guidance: Constant-time comparison (hash_equals / crypto.timingSafeEqual / hmac.compare_digest); published in PHP, JavaScript and Python.
+  timestamp_in_signature: false
+  replay_protection: >-
+    None in the signature itself — the header carries a bare hex digest with no timestamp and no
+    version prefix, so a captured request stays valid indefinitely. The docs compensate by
+    requiring idempotent handlers and duplicate detection on entity ids.
+  ip_allowlisting: Recommended by the docs ("allowlist Worksome's IP ranges"), but no IP ranges are published.
+  secret_rotation: Manual, coordinated with Worksome support.
+
+delivery:
+  expected_response: any 2XX
+  unknown_events: Docs instruct returning 200 even for unrecognised event types, so new events can be added without breaking consumers.
+  timeout_seconds: 60
+  retry_attempts: 5
+  retry_schedule: [10s, 100s, 1000s, 10000s]
+  retry_schedule_note: Exponential; total window is roughly 3.1 hours from first failure to final attempt.
+  after_exhaustion: Delivery stops. Every attempt is logged and Worksome can restart sending for a specific event on request to customer service.
+  manual_replay: retryWebhookEvent mutation
+  delivery_logs: webhookEvents and webhookEventLogs queries
+  ordering_guarantee: none stated
+  at_least_once: true
+
+payload_philosophy: >-
+  Deliberately minimal. Payloads carry identifiers and a small set of key fields, not full
+  objects; the documented pattern is to receive the event and then call the GraphQL API with the
+  ids for anything more. The ids in a webhook payload are the same Global IDs the API uses.
+
+event_count: 17
+subscribable_but_never_delivered: 1
+
+events:
+- identifier: contractAccepted
+  name: Contract Accepted
+  group: hires_and_contracts
+  trigger: A worker accepts a contract.
+  payload_keys: [contract, worker, trustedContact, customFieldValues]
+  docs: https://docs.worksome.com/webhooks/reference/events/contract-accepted/
+- identifier: hireAccepted
+  name: Hire Accepted
+  group: hires_and_contracts
+  trigger: Never delivered.
+  delivered: false
+  warning: >-
+    Subscribable but dead. The value exists in the subscription list and nothing in the platform
+    emits it — when a worker accepts, the hire-accepted handler sends contractAccepted instead.
+    Worksome documents this explicitly. Subscribe to contractAccepted for that moment.
+- identifier: hireUpdated
+  name: Hire Updated
+  group: hires_and_contracts
+  trigger: A hire or one of its related objects changes.
+  payload_keys: [contract, worker, trustedContact, customFieldValues]
+- identifier: hireCancelled
+  name: Hire Cancelled
+  group: hires_and_contracts
+  trigger: A hire is cancelled before it became active.
+  payload_keys: [contract, worker, trustedContact, customFieldValues, cancelReason]
+- identifier: hireEnded
+  name: Hire Ended
+  group: hires_and_contracts
+  trigger: A hire reaches its natural end.
+  payload_keys: [contract, worker, trustedContact, customFieldValues]
+- identifier: hireTerminated
+  name: Hire Terminated
+  group: hires_and_contracts
+  trigger: A hire is ended early with a termination reason.
+  payload_keys: [contract, worker, trustedContact, customFieldValues, terminatedReason]
+  enum_note: >-
+    terminatedReason is one of worker_unavailability, project_completed_early,
+    mutual_agreement_to_terminate, budget_constraints, change_in_project_scope,
+    performance_issues, communication_issues, personal_reasons, legal_or_compliance_issues,
+    violation_of_contract_terms, unforeseen_circumstances, dissatisfaction_with_quality_of_work,
+    conflict_of_interest, other.
+- identifier: trustedContactUpdated
+  name: Trusted Contact Updated
+  group: talent_pool
+  trigger: A trusted contact changes — contact details, skills, and so on.
+  payload_keys: [trustedContact, worker]
+  caveat: The payload explicitly does NOT say what changed. The consumer must re-query the API to diff.
+- identifier: paymentRequestIssued
+  name: Payment Request Issued
+  group: payment_requests
+  trigger: A worker submits a payment request.
+  payload_keys: [paymentRequest, worker]
+- identifier: paymentRequestApproved
+  name: Payment Request Approved
+  group: payment_requests
+  trigger: The company approves it, or auto-approval applies.
+  payload_keys: [paymentRequest, worker]
+- identifier: paymentRequestRejected
+  name: Payment Request Rejected
+  group: payment_requests
+  trigger: The company rejects it.
+  payload_keys: [paymentRequest, worker]
+- identifier: paymentRequestPaid
+  name: Payment Request Paid
+  group: payment_requests
+  trigger: The company pays it.
+  payload_keys: [paymentRequest, worker]
+- identifier: paymentRequestCancelled
+  name: Payment Request Cancelled
+  group: payment_requests
+  trigger: It is cancelled.
+  payload_keys: [paymentRequest, worker]
+- identifier: paymentRequestWorkerPaidOut
+  name: Payment Request Worker Paid Out
+  group: payment_requests
+  trigger: The worker has been paid out.
+  payload_keys: [paymentRequest, worker]
+- identifier: paymentRequestRecruiterPaidOut
+  name: Payment Request Recruiter Paid Out
+  group: payment_requests
+  trigger: The staffing agency has been paid out.
+  payload_keys: [paymentRequest, worker]
+- identifier: invoiceCreated
+  name: Invoice Created
+  group: invoicing
+  trigger: An invoice is created.
+  payload_keys: [invoice]
+- identifier: invoicePaid
+  name: Invoice Paid
+  group: invoicing
+  trigger: An invoice is paid.
+  payload_keys: [invoice]
+- identifier: creditNoteCreated
+  name: Credit Note Created
+  group: invoicing
+  trigger: A credit note is created.
+  payload_keys: [creditNote]
+
+shared_payload_shapes:
+  payment_requests: All seven payment-request events carry an identical payload shape; only the event field differs, so one handler can serve all seven.
+  invoicing: invoiceCreated and invoicePaid wrap under `invoice`; creditNoteCreated wraps the same object shape under `creditNote`.
+
+hire_status:
+  field: data.contract.hireStatus
+  added: '2025-06-03'
+  present_on: [contractAccepted, hireCancelled, hireEnded, hireTerminated, hireUpdated]
+  values: [draft, offered, ready, active, ended, cancelled, terminated]
+  case_note: >-
+    Webhook payloads carry these lowercase; the GraphQL HireActiveStatus enum exposes the same
+    values UPPERCASE. The docs instruct comparing case-insensitively when matching webhook
+    payloads against API responses.
+  guidance: >-
+    Read hireStatus rather than inferring state from which event arrived. contractAccepted,
+    hireUpdated and hireEnded can fire around the same moment because accepting a contract also
+    changes the hire.
+
+stable_reference:
+  field: data.contract.hireId
+  rationale: >-
+    Revising contract terms creates a new contract with a new id while hireId stays constant.
+    Integrations should key on hireId to keep continuity across contract revisions.
+
+consumer_requirements:
+  idempotent_handlers: required
+  idempotency_key: entity ids in the payload
+  rationale: At-least-once delivery with up to 5 retries, plus overlapping hire lifecycle events, means duplicates are expected rather than exceptional.

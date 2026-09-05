@@ -1,0 +1,57 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://docs.worksome.com/schemas/timesheet-registration.json",
+    "title": "Worksome Timesheet Registration",
+    "description": "Payload format for submitting timesheet registrations to Worksome via the createCustomTimesheet GraphQL mutation using the 'default-json' schema. Accepts either a single object or an array of objects.",
+    "oneOf": [
+        { "$ref": "#/$defs/registration" },
+        {
+            "type": "array",
+            "items": { "$ref": "#/$defs/registration" }
+        }
+    ],
+    "$defs": {
+        "registration": {
+            "type": "object",
+            "required": ["hireId", "reportedDate", "hours", "externalId"],
+            "properties": {
+                "hireId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Worksome Global ID of the hire. Obtain from the Worksome GraphQL API."
+                },
+                "reportedDate": {
+                    "type": "string",
+                    "format": "date",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                    "description": "Date of the registration in YYYY-MM-DD format."
+                },
+                "hours": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Number of hours worked on the reported date."
+                },
+                "externalId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Unique identifier from the external system. Used as the key for updates — sending the same externalId replaces the existing registration for that date."
+                },
+                "reference": {
+                    "type": "string",
+                    "description": "Free-text reference field (e.g., project code, cost centre, purchase order number)."
+                },
+                "isPayable": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether this registration is billable. Defaults to true."
+                },
+                "meta": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "description": "Arbitrary key-value metadata to store with the registration."
+                }
+            },
+            "additionalProperties": false
+        }
+    }
+}

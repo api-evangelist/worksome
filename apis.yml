@@ -1,23 +1,171 @@
 aid: worksome
 name: Worksome
-description: 'Worksome is a company surfaced via the API Evangelist harvest backlog (source: secondary-market)
-  and added to the network as a stub for full-pipeline profiling.'
+description: 'Worksome is a Copenhagen-headquartered external workforce platform (Freelancer
+  Management System) used by enterprise and mid-market teams to source, contract, classify,
+  and pay contingent workers across 150+ countries. It ships a public GraphQL API at
+  api.worksome.com/graphql covering hires, contracts, jobs, candidates, projects, timesheets,
+  payment requests, invoices, compliance gates and worker classification, alongside 17
+  HMAC-signed webhook events, an official PHP SDK, a Go CLI with 170+ operations, a Zapier
+  app, and an early-access MCP server for AI agents.'
 url: https://raw.githubusercontent.com/api-evangelist/worksome/refs/heads/main/apis.yml
+image: https://cdn.prod.website-files.com/60a21be3147bde7a6ece004d/60e44e338953920e5aafcd66_Worksome%20Webclip.png
 x-type: company
 x-source: harvest:secondary-market
-x-tier: stub
-x-tier-reason: harvest
 specificationVersion: '0.20'
 created: '2026-09-04'
 modified: '2026-09-04'
+position: Producing
 tags:
 - Company
-apis: []
+- Freelancer Management System
+- Contingent Workforce
+- Human Resources
+- Staffing
+- Workforce Compliance
+- Payments
+- GraphQL
+- Webhooks
+- Denmark
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
 - FN: APIs.json
   email: info@apis.io
+apis:
+- aid: worksome:graphql
+  name: Worksome GraphQL API
+  description: 'The Worksome public GraphQL API — a single POST endpoint at
+    https://api.worksome.com/graphql exposing 87 queries and 113 mutations across 496
+    types. Covers hires and contracts, jobs and candidates, projects and milestones,
+    timesheets and payment requests, invoices, trusted contacts (talent pool), compliance
+    gates and worker classification, approvals and workflows, custom fields, user groups,
+    and webhook management. Authenticated with a Bearer Personal Access Token or an OAuth
+    2.0 authorization-code token. Schema introspection is open and unauthenticated.'
+  humanURL: https://docs.worksome.com/graphql/
+  image: https://cdn.prod.website-files.com/60a21be3147bde7a6ece004d/60e44e338953920e5aafcd66_Worksome%20Webclip.png
+  baseURL: https://api.worksome.com/graphql
+  tags:
+  - GraphQL
+  - Hiring
+  - Contracts
+  - Payments
+  - Compliance
+  - Timesheets
+  properties:
+  - type: GraphQL
+    url: graphql/worksome.graphql
+  - type: Documentation
+    url: https://docs.worksome.com/graphql/
+  - type: APIReference
+    url: https://docs.worksome.com/graphql/reference/queries/
+  - type: GettingStarted
+    url: https://docs.worksome.com/graphql/
+  - type: Authentication
+    url: https://docs.worksome.com/authentication/
+  - type: Console
+    url: https://api.worksome.com/graphql
+- aid: worksome:webhooks
+  name: Worksome Webhooks
+  description: 'Worksome outbound webhooks deliver real-time notifications for 17 event
+    types across hires and contracts, the talent pool, payment requests and invoicing.
+    Each delivery is an HTTP POST with a JSON body signed with HMAC-SHA256 in a Signature
+    header using a shared secret. Payloads are deliberately minimal and carry Global IDs
+    that resolve against the GraphQL API. Failed deliveries are retried up to five times
+    with exponential backoff (10s, 100s, 1000s, 10000s).'
+  humanURL: https://docs.worksome.com/webhooks/
+  image: https://cdn.prod.website-files.com/60a21be3147bde7a6ece004d/60e44e338953920e5aafcd66_Worksome%20Webclip.png
+  baseURL: https://api.worksome.com/graphql
+  tags:
+  - Webhooks
+  - Events
+  - Hiring
+  - Payments
+  properties:
+  - type: Webhooks
+    url: asyncapi/worksome-webhooks.yml
+  - type: Documentation
+    url: https://docs.worksome.com/webhooks/
+  - type: APIReference
+    url: https://docs.worksome.com/webhooks/reference/
 common:
+- type: DomainSecurity
+  url: security/worksome-domain-security.yml
 - type: Website
-  url: https://www.nasdaqprivatemarket.com/
+  url: https://www.worksome.com/
+- type: DeveloperPortal
+  url: https://docs.worksome.com/
+- type: Documentation
+  url: https://docs.worksome.com/
+- type: APIReference
+  url: https://docs.worksome.com/graphql/reference/queries/
+- type: GettingStarted
+  url: https://docs.worksome.com/graphql/
+- type: Authentication
+  url: authentication/worksome-authentication.yml
+- type: Support
+  url: https://docs.worksome.com/support/
+- type: HelpCenter
+  url: https://help.worksome.dk/en
+- type: Blog
+  url: https://www.worksome.com/blog
+- type: GitHubOrganization
+  url: https://github.com/worksome
+- type: Pricing
+  url: https://www.worksome.com/pricing
+- type: SignUp
+  url: https://www.worksome.com/demo
+- type: Login
+  url: https://use.worksome.com/login
+- type: TermsOfService
+  url: https://legal.worksome.com/service-specific-terms/api-terms-of-use
+- type: PrivacyPolicy
+  url: https://www.worksome.com/privacy-policy
+- type: StatusPage
+  url: https://status.worksome.com/
+- type: ChangeLog
+  url: changelog/worksome-changelog.yml
+- type: Deprecation
+  url: lifecycle/worksome-lifecycle.yml
+- type: Lifecycle
+  url: lifecycle/worksome-lifecycle.yml
+- type: Conventions
+  url: conventions/worksome-conventions.yml
+- type: Idempotency
+  url: conventions/worksome-conventions.yml
+- type: ErrorCatalog
+  url: errors/worksome-error-codes.yml
+- type: RateLimits
+  url: rate-limits/worksome-rate-limits.yml
+- type: Plans
+  url: plans/worksome-plans-pricing.yml
+- type: Packages
+  url: packages/worksome-packages.yml
+- type: SDKs
+  url: packages/worksome-packages.yml
+- type: CLI
+  url: cli/worksome-cli.yml
+- type: Sandbox
+  url: sandbox/worksome-sandbox.yml
+- type: Conformance
+  url: conformance/worksome-conformance.yml
+- type: DataModel
+  url: data-model/worksome-data-model.yml
+- type: JSONSchema
+  url: json-schema/worksome-timesheet-registration.json
+- type: LLMsTxt
+  url: llms/worksome-llms.txt
+- type: AgentSkill
+  url: skills/_index.yml
+- type: X-MCPServerCandidate
+  url: mcp/worksome-mcp.yml
+- type: Webhooks
+  url: asyncapi/worksome-webhooks.yml
+- type: GraphQL
+  url: graphql/worksome.graphql
+- type: BlogRSS
+  url: https://www.worksome.com/blog/rss.xml
+x-enrichment:
+  date: '2026-09-04'
+  status: enriched
+  artifacts_added: 25
+  pass: local-v3

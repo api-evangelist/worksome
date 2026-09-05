@@ -1,0 +1,129 @@
+generated: '2026-09-04'
+method: searched
+source: https://docs.worksome.com/changelog/
+docs: https://docs.worksome.com/changelog/
+note: >-
+  Worksome keeps a hand-curated, dated API changelog on the docs host, organised by impact
+  band (Medium Impact Changes / Low Impact Changes / Documentation). It is a summary layer:
+  the page points at Apollo Studio for the exhaustive machine-generated schema changelog,
+  which is where every field-level change lands. Entries carry before/after query examples for
+  deprecations, which is materially more useful than a bare "deprecated X" line. There is no
+  RSS or JSON feed for the changelog, and no version number — the API is unversioned and
+  evolves in place, so the changelog IS the versioning surface.
+scheme: date-based
+versioned: false
+current_version: null
+feed: null
+full_changelog: Apollo Studio (linked per-entry from the docs changelog; not anonymously readable)
+impact_bands: [Medium Impact Changes, Low Impact Changes, Documentation]
+
+entries:
+- date: '2026-04-22'
+  impact: medium
+  breaking: false
+  deprecations:
+  - field: Hire.recruiterFee
+    replacement: Hire.fees
+  - field: CompanyRecruiter.recruiterFee
+    replacement: CompanyRecruiter.fees
+  highlights: >-
+    Deprecated the recruiterFee field on Hire and CompanyRecruiter. It only ever supported
+    percentage-based fees and returned null for hourly, daily, weekly or monthly fee bases.
+    Migrate to fees, which returns the full fee set and supports every basis. Before/after
+    queries are published.
+
+- date: '2026-04-18'
+  impact: documentation
+  breaking: false
+  additions:
+  - Timesheet Integration guide
+  - JSON Schema at /schemas/timesheet-registration.json
+  highlights: >-
+    New integration guide for clients capturing timesheet data in an external system, plus a
+    published JSON Schema for the timesheet registration payload usable for validation and
+    client code generation.
+
+- date: '2026-03-15'
+  impact: documentation
+  breaking: false
+  additions:
+  - Auto-generated GraphQL reference (queries, mutations, objects, enums, scalars, unions, interfaces, input objects) with example queries
+  - Guides on pagination and filtering, error handling, and rate limiting
+  - Per-event webhook reference pages with full payload examples, plus a handling guide
+  - Integration docs for CLI, PHP SDK, MCP Server, Zapier and AI agents
+  - llms.txt and llms-full.txt
+  highlights: >-
+    The single largest documentation expansion in the log — this is when the developer surface
+    went from an authentication page and a webhook overview to a full reference site.
+
+- date: '2026-01-15'
+  impact: medium
+  breaking: false
+  additions:
+  - createDraftHire mutation
+  deprecations:
+  - field: hire (mutation)
+    replacement: createDraftHire
+  highlights: >-
+    Added createDraftHire for creating draft hires for trusted contacts (which must then be
+    completed in the Worksome UI before becoming active) and deprecated the hire mutation in
+    its favour. Also clarified that passing an empty array to HireInput.customFieldValues
+    skips custom field syncing entirely, which will fail validation if required custom fields
+    are configured.
+
+- date: '2025-06-03'
+  impact: low
+  breaking: false
+  additions:
+  - contract.hireStatus on all hire-related webhook payloads
+  highlights: >-
+    Added hireStatus inside the contract object of contractAccepted, hireCancelled, hireEnded,
+    hireTerminated and hireUpdated, giving one consistent way to track hire state across every
+    hire event. Values draft, offered, ready, active, ended, cancelled, terminated. Explicitly
+    non-breaking; contract.status is unchanged.
+
+- date: '2024-09-02'
+  impact: low
+  breaking: true
+  removals:
+  - Job.paymentScheme and related arguments (removed 2024-09-29)
+  highlights: Job payment schemes deprecated as part of platform simplification and removed on 29 September 2024. No replacement planned.
+
+- date: '2024-08-29'
+  impact: low
+  breaking: true
+  removals:
+  - All bill / bills references
+  highlights: Completion of the Bill to PaymentRequest rename announced 2024-02-12.
+
+- date: '2024-02-27'
+  impact: medium
+  breaking: false
+  deprecations:
+  - field: Hire.dateStart
+    replacement: Hire.startDate
+  - field: Hire.dateEnd
+    replacement: Hire.endDate
+  highlights: Hire date properties renamed; old fields deprecated with a migration instruction.
+
+- date: '2024-02-12'
+  impact: medium
+  breaking: false
+  deprecations:
+  - field: Bill type
+    replacement: PaymentRequest type
+  - field: bill query
+    replacement: paymentRequest query
+  - field: bills query
+    replacement: paymentRequests query
+  highlights: >-
+    Bill renamed to PaymentRequest, with the old names deprecated and a removal date of 29
+    August 2024 announced at deprecation time — the clearest example in this log of Worksome
+    announcing a removal date up front rather than at removal.
+
+summary:
+  entry_count: 9
+  window: 2024-02-12 to 2026-04-22
+  breaking_changes_in_window: 2
+  deprecations_in_window: 8
+  removals_announced_with_date_in_advance: true

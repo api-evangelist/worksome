@@ -1,0 +1,101 @@
+generated: '2026-09-04'
+method: searched
+source: https://docs.worksome.com/integrations/cli/
+docs: https://docs.worksome.com/integrations/cli/
+note: >-
+  The Worksome CLI is a first-party Go binary covering 60+ resource groups and 170+ operations
+  over the GraphQL API, explicitly designed for AI agents as well as humans — the AI Agents page
+  names it as the recommended path for an agent that can execute shell commands. It is the
+  broadest agent-usable surface Worksome ships today, and it is also the least obtainable one:
+  the worksome-cli repository is PRIVATE, so both `go install` and the pre-built release binaries
+  require repository access granted by a Worksome contact. There is no public registry entry, no
+  Homebrew tap, and no anonymous download. Recorded as a real, documented CLI with a gated
+  distribution.
+
+name: worksome
+language: Go
+build_requirement: Go 1.26+
+repository: https://github.com/worksome/worksome-cli
+repository_public: false
+official: true
+operation_count: 170+
+resource_group_count: 60+
+
+install:
+- method: prebuilt-binary
+  platforms: [macOS, Linux, Windows]
+  location: Attached to each GitHub release
+  gated: true
+  gate: Requires access to the private worksome-cli repository
+- method: source
+  command: go install github.com/worksome/worksome-cli/cmd/worksome@latest
+  gated: true
+  gate: Requires Go 1.26+ and access to the private repository
+
+authentication:
+  credential: Personal Access Token only
+  oauth_supported: false
+  resolution_order:
+  - --token flag
+  - WORKSOME_API_TOKEN environment variable
+  - config file (~/.worksome/config.yaml)
+  commands:
+  - {command: worksome auth login, description: Interactive setup; saves the token under the default profile unless --profile is given}
+  - {command: worksome auth status, description: Show current auth status}
+  - {command: worksome auth list, description: List configured profiles}
+  - {command: worksome auth switch <profile>, description: Switch active profile}
+  - {command: worksome auth logout <profile>, description: Remove a profile and its stored credentials}
+
+usage_pattern: worksome <resource> <action> [flags]
+
+resource_groups:
+- {resource: hires, actions: [list, get, create-draft, terminate, cancel]}
+- {resource: jobs, actions: [list, get, create, update]}
+- {resource: contracts, actions: [list, get]}
+- {resource: invoices, actions: [list, get]}
+- {resource: worker, actions: [get, update]}
+- {resource: projects, actions: [list, get, create, update]}
+- {resource: timesheets, actions: [list, get]}
+- {resource: webhooks, actions: [list, get, create, delete]}
+- {resource: approvals, actions: [list, get, create, update]}
+resource_groups_note: >-
+  The nine groups above are the ones the docs name as commonly used. The docs state the CLI
+  "covers the full Worksome API" across 60+ resource groups; the complete list is only
+  discoverable from `worksome --help` against an installed binary, which is gated.
+
+global_flags:
+- {flag: --token, short: -t, description: API token, overrides config and environment}
+- {flag: --endpoint, description: Custom API endpoint URL}
+- {flag: --profile, short: -p, description: Config profile name}
+- {flag: --output, short: -o, description: 'Output format: json or table'}
+- {flag: --columns, description: Comma-separated columns to display in table output}
+- {flag: --fields, description: 'Comma-separated fields to include, dot paths supported (e.g. id,name,worker.name)'}
+- {flag: --filter, description: 'Key=value filter pairs on list commands (e.g. "status=ACTIVE,currency=DKK")'}
+- {flag: --timeout, description: Request timeout in seconds, default 30}
+- {flag: --verbose, short: -v, description: Show request and response details}
+- {flag: --no-color, description: Disable colored output}
+- {flag: --dry-run, description: Preview the operation and variables without executing}
+
+list_flags: ['--all (fetch every page)', '--first N (page size)', '--page N', '--watch (re-run every 5 seconds)', '--search', '--filter']
+input_flags: ['--input <file> (JSON, use - for stdin)', 'individual flags override values from --input']
+
+output:
+  auto_detection: >-
+    Auto-detects the terminal. Piped output defaults to JSON; an interactive terminal gets
+    human-readable formatting. Forceable with --output json | table.
+  agent_note: >-
+    The JSON mode plus --dry-run is what makes this agent-usable: an agent can rehearse a
+    mutation, read the operation and variables it would send, then execute and parse structured
+    output. No other Worksome surface offers rehearsal.
+
+shell_completion: [bash, zsh, fish, powershell]
+
+key_flows:
+- {name: List active hires, command: 'worksome hires list --active-status ACTIVE --output json'}
+- {name: Fetch a contract, command: 'worksome contracts get Q29udHJhY3Q6MTIzNA== --output json'}
+- {name: Create a job from a file, command: 'worksome jobs create --input job.json'}
+- {name: Rehearse a job creation, command: 'worksome jobs create --company <id> --name "Test" --dry-run'}
+- {name: Terminate a hire with a reason, command: 'worksome hires terminate --input base.json --reason "PROJECT_COMPLETED_EARLY"'}
+- {name: Register a webhook, command: 'worksome webhooks create'}
+
+support: Contact Worksome Support; there is no public issue tracker because the repository is private.
