@@ -1,0 +1,14 @@
+{
+  "repo": "worksome",
+  "feeds": [
+    {
+      "source": "https://help.worksome.dk/en",
+      "feed_url": "https://help.worksome.dk/en",
+      "title": "",
+      "saved": 0,
+      "method": "none"
+    }
+  ],
+  "post_count": 0,
+  "fetched": "2026-09-06T19:17:18Z"
+}
