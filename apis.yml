@@ -24,6 +24,17 @@ tags:
 - Workforce Compliance
 - Payments
 - GraphQL
+- Webhook
+- Denmark
+tags_raw:
+- Company
+- Freelancer Management System
+- Contingent Workforce
+- Human Resources
+- Staffing
+- Workforce Compliance
+- Payments
+- GraphQL
 - Webhooks
 - Denmark
 maintainers:
@@ -76,6 +87,11 @@ apis:
   image: https://cdn.prod.website-files.com/60a21be3147bde7a6ece004d/60e44e338953920e5aafcd66_Worksome%20Webclip.png
   baseURL: https://api.worksome.com/graphql
   tags:
+  - Webhook
+  - Event
+  - Hiring
+  - Payments
+  tags_raw:
   - Webhooks
   - Events
   - Hiring
