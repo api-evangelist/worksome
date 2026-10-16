@@ -1,21 +1,19 @@
-# Kin Score artifact — worksome — 2026-09-04T224856
+# Kin Score artifact — worksome — 2026-10-11T110117
 # The API Evangelist rating (https://github.com/api-evangelist/kin-score). Generated; do not edit.
 ---
 kin_score:
   slug: worksome
-  schema_version: 0.18.3
-  scored_at: '2026-09-04'
-  run_ts: 2026-09-04T224856
-  composite: 55.2
-  band: strong
+  schema_version: 0.23.0
+  scored_at: '2026-10-11'
+  run_ts: 2026-10-11T110117
+  composite: 54.2
+  band: developing
   facets:
-    discoverability: 68.5
-    contract_quality: 49.0
-    governance: 4.5
-    operational_transparency: 73.7
-    developer_ergonomics: 80.4
-    commercial_clarity: 44.7
+    discoverability: 73.2
+    contract_quality: 46.9
     contract_governance: 4.5
+    operational_transparency: 71.1
+    developer_ergonomics: 80.4
     access_clarity: 44.7
   agent_readiness:
     score: 29.3
@@ -44,7 +42,7 @@ kin_score:
     applies: true
     regime: Payments
     regime_id: payments
-    score: 39.1
+    score: 22.3
     matched_via: tags
   provenance:
     mcp: derived
