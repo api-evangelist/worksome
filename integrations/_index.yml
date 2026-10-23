@@ -28,3 +28,44 @@
     builder: unknown (not in the directory record)
   status: not-a-workflow
   arazzo: null
+- slug: worksome-packagist
+  label: Packagist
+  partner: packagist
+  partner_name: Packagist
+  category: official SDK (PHP)
+  type: register
+  channel: package-registry
+  evidence: https://packagist.org/packages/worksome/pest-plugin-silence
+  source: edge
+  relationship: distribution-channel
+  contract_reference:
+    register: Packagist (public registry JSON)
+    spec_file: null
+    language: PHP
+    packages:
+    - name: worksome/pest-plugin-silence
+      version: v0.1.2
+      released: '2022-02-22'
+      released_field: time
+      lapsed: true
+      page: https://packagist.org/packages/worksome/pest-plugin-silence
+      repo_leg: github-org:worksome
+      publisher_leg: org:worksome
+      matched_by: github-org
+      abandoned: true
+    - name: worksome/sdk
+      version: v0.1.4
+      released: '2025-04-17'
+      released_field: time
+      lapsed: false
+      page: https://packagist.org/packages/worksome/sdk
+      repo_leg: github-org:worksome
+      publisher_leg: org:worksome
+      matched_by: github-org
+    current: true
+    signal_note: 'an official package on the registry: distribution, not an integration; lapsed = no release in
+      24 months'
+    detected_by: sweep-php-dart-elixir-package-registries.py
+    detected: '2026-10-22'
+  status: not-a-workflow
+  arazzo: null

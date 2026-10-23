@@ -25,8 +25,51 @@ edges:
     builder: unknown (not in the directory record)
   detected_by: sweep-workflow-automation.py
   first_seen: '2026-10-15'
+- partner_name: Packagist
+  partner: packagist
+  partner_match: register
+  type: register
+  direction: provider-built
+  category: official SDK (PHP)
+  evidence: https://packagist.org/packages/worksome/pest-plugin-silence
+  channel: package-registry
+  relationship: distribution-channel
+  contract_reference:
+    register: Packagist (public registry JSON)
+    spec_file: null
+    language: PHP
+    packages:
+    - name: worksome/pest-plugin-silence
+      version: v0.1.2
+      released: '2022-02-22'
+      released_field: time
+      lapsed: true
+      page: https://packagist.org/packages/worksome/pest-plugin-silence
+      repo_leg: github-org:worksome
+      publisher_leg: org:worksome
+      matched_by: github-org
+      abandoned: true
+    - name: worksome/sdk
+      version: v0.1.4
+      released: '2025-04-17'
+      released_field: time
+      lapsed: false
+      page: https://packagist.org/packages/worksome/sdk
+      repo_leg: github-org:worksome
+      publisher_leg: org:worksome
+      matched_by: github-org
+    current: true
+    signal_note: 'an official package on the registry: distribution, not an integration; lapsed = no release in
+      24 months'
+    detected_by: sweep-php-dart-elixir-package-registries.py
+    detected: '2026-10-22'
+  detected_by: sweep-php-dart-elixir-package-registries.py
+  first_seen: '2026-10-22'
 method: searched
 checked:
 - https://zapier.com/api/v4/apps/
+- https://hex.pm/api
+- https://packagist.org/packages
+- https://pub.dev/api
 source:
 - https://zapier.com/api/v4/apps/
